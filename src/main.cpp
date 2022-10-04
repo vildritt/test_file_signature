@@ -2,10 +2,14 @@
 #include <cstdint>
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <filesystem>
+#include <cassert>
+#include <vector>
 
 
 using Size = uint64_t;
+using Digest = std::vector<unsigned char>;
 
 static constexpr const Size kKiloBytes = 1024;
 static constexpr const Size kMegaBytes = 1024 * kKiloBytes;
@@ -13,11 +17,12 @@ static constexpr const Size kMegaBytes = 1024 * kKiloBytes;
 static constexpr const Size kMinBlockSizeBytes = 512;
 static constexpr const Size kMaxBlockSizeBytes = 10 * kMegaBytes;
 
+
 struct Options {
-    static constexpr const uint64_t kDefaultBlockSize = 1*1024*1024;
+    static constexpr const Size kDefaultBlockSize = 1 * kMegaBytes;
     std::string inputFilePath;
     std::string outputFilePath;
-    uint64_t blockSizeBytes = kDefaultBlockSize;
+    Size blockSizeBytes = kDefaultBlockSize;
 };
 
 
@@ -28,19 +33,19 @@ void printUsage(const char* appPath)
 }
 
 
-uint64_t parseBlockSize(const std::string& blockSizeText)
+Size parseBlockSize(const std::string& blockSizeText)
 {
     size_t idx = 0;
-    uint64_t res = std::stoull(blockSizeText, &idx, 10);
+    Size res = std::stoull(blockSizeText, &idx, 10);
     if (idx < blockSizeText.size()) {
         switch(blockSizeText[idx]) {
             case 'k':
             case 'K':
-                res *= 1024;
+                res *= kKiloBytes;
                 break;
             case 'm':
             case 'M':
-                res *= 1024*1024;
+                res *= kMegaBytes;
                 break;
         }
     }
@@ -60,6 +65,9 @@ Options parseCliParameters(int argc, char* argv[])
 
     if (argc >= 3) {
         opts.outputFilePath = argv[2];
+        if (opts.outputFilePath == "-") {
+            opts.outputFilePath = "";
+        }
 
         if (argc >= 4) {
             opts.blockSizeBytes = parseBlockSize(argv[3]);
@@ -69,16 +77,38 @@ Options parseCliParameters(int argc, char* argv[])
     if (opts.blockSizeBytes < kMinBlockSizeBytes) {
         throw std::runtime_error("block size is less then minimal");
     }
-    if (opts.blockSizeBytes < kMaxBlockSizeBytes) {
-        throw std::runtime_error("block size is less then maximal");
+    if (opts.blockSizeBytes > kMaxBlockSizeBytes) {
+        throw std::runtime_error("block size is greater then maximal");
     }
 
     return opts;
 }
 
 
+Digest blockDigest(const char* data, Size size)
+{
+    // TODO 0: implement MD5
+
+    Size v = 0;
+    for(Size i = 0; i < size; ++i) {
+        v += data[i];
+    }
+
+    Digest res;
+    const size_t N = sizeof(Size);
+    res.reserve(N);
+    for(size_t i = 0; i < N; ++i) {
+        res.push_back(v & 0xFF);
+        v >>= 8;
+    }
+    return res;
+}
+
+
 void getSignatures(const Options& opts)
 {
+    assert(opts.blockSizeBytes > 0);
+
     const std::filesystem::path finp(opts.inputFilePath);
     if (!std::filesystem::exists(finp)) {
         throw std::runtime_error("input file not exists: " + opts.inputFilePath);
@@ -86,37 +116,57 @@ void getSignatures(const Options& opts)
 
     const auto size = std::filesystem::file_size(finp);
     const auto blockSize = opts.blockSizeBytes;
-
-    const auto
-
-    std::ifstream fin(opts.inputFilePath, std::ios_base::binary);
-    std::ofstream fout(opts.outputFilePath, std::ios_base::binary);
-
-    fin.g
-    std::ifstream::pos_type filesize(const char* filename)
-    {
-        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-        return in.tellg();
+    auto blockCount = size / blockSize;
+    const auto lastBlockRealSize = size - blockCount * blockSize;
+    const bool needToFillLastBlock = lastBlockRealSize > 0;
+    if (needToFillLastBlock) {
+        blockCount++;
     }
 
+    std::ifstream fin(opts.inputFilePath, std::ios_base::binary);
+
+    std::ostream* sout = &std::cout;
+    std::unique_ptr<std::ofstream> fout;
+
+    if (!opts.outputFilePath.empty()) {
+        fout = std::make_unique<std::ofstream>(opts.outputFilePath, std::ios_base::trunc);
+        sout = fout.get();
+    }
+
+    std::vector<char> block(blockSize);
+
+    const auto lastBlockIndex = blockCount - 1;
+    for(decltype(blockCount) i = 0; i < blockCount; ++i) {
+        const bool islast = (i == lastBlockIndex);
+        if (islast && needToFillLastBlock) {
+            fin.read(block.data(), lastBlockRealSize);
+            std::fill(block.begin() + lastBlockRealSize, block.end(), 0);
+        } else {
+            fin.read(block.data(), blockSize);
+        }
+
+        // output
+        {
+            const auto digest = blockDigest(block.data(), block.size());
+            for (const auto& v : digest) {
+                *sout << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(v);
+            }
+            *sout << std::endl;
+        }
+    }
 }
+
 
 int main(int argc, char* argv[])
 {
     try {
         const auto opts = parseCliParameters(argc, argv);
-
-        std::cout
-                << opts.inputFilePath << std::endl
-                << opts.outputFilePath << std::endl
-                << opts.blockSizeBytes << std::endl;
-
         getSignatures(opts);
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what();
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     } catch (...) {
-        std::cerr << "Error: unknown";
+        std::cerr << "Error: unknown" << std::endl;
         return 1;
     }
     return 0;

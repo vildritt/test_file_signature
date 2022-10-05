@@ -14,9 +14,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
 add_subdirectory(src)
 
+#if(NOT DEFINED SS_TESTS_DISABLED)
+    enable_testing()
+    add_subdirectory(test)
+#endif()
+
 add_custom_target(segmented_signature-docs
     SOURCES
         README.md
         LICENSE.md
         TODO
+        src/usage.txt
 )

@@ -7,36 +7,37 @@
 #include <cassert>
 #include <vector>
 
+#include "usage.hpp"
+#include "md5.hpp"
 
-using Size = uint64_t;
+
+using MD5_Size = uint64_t;
 using Digest = std::vector<unsigned char>;
 
-static constexpr const Size kKiloBytes = 1024;
-static constexpr const Size kMegaBytes = 1024 * kKiloBytes;
+static constexpr const MD5_Size kKiloBytes = 1024;
+static constexpr const MD5_Size kMegaBytes = 1024 * kKiloBytes;
 
-static constexpr const Size kMinBlockSizeBytes = 512;
-static constexpr const Size kMaxBlockSizeBytes = 10 * kMegaBytes;
+#ifndef _NDEBUG
+static constexpr const MD5_Size kMinBlockSizeBytes = 1;
+#else
+static constexpr const MD5_Size kMinBlockSizeBytes = 512;
+#endif
+static constexpr const MD5_Size kMaxBlockSizeBytes = 10 * kMegaBytes;
 
 
 struct Options {
-    static constexpr const Size kDefaultBlockSize = 1 * kMegaBytes;
+    static constexpr const MD5_Size kDefaultBlockSize = 1 * kMegaBytes;
+
     std::string inputFilePath;
     std::string outputFilePath;
-    Size blockSizeBytes = kDefaultBlockSize;
+    MD5_Size blockSizeBytes = kDefaultBlockSize;
 };
 
 
-void printUsage(const char* appPath)
-{
-    const auto executableName = std::filesystem::path(appPath).filename();
-    std::cerr << "Usage: " << executableName << " <in_file_path> [<out_file_path=>] [<buffer_size=1M>]" << std::endl;
-}
-
-
-Size parseBlockSize(const std::string& blockSizeText)
+MD5_Size parseBlockSize(const std::string& blockSizeText)
 {
     size_t idx = 0;
-    Size res = std::stoull(blockSizeText, &idx, 10);
+    MD5_Size res = std::stoull(blockSizeText, &idx, 10);
     if (idx < blockSizeText.size()) {
         switch(blockSizeText[idx]) {
             case 'k':
@@ -57,7 +58,7 @@ Options parseCliParameters(int argc, char* argv[])
 {
     Options opts;
     if (argc < 2) {
-        printUsage(argv[0]);
+        misc::printUsage(argv[0]);
         throw std::runtime_error("input file path not given");
     }
 
@@ -85,29 +86,23 @@ Options parseCliParameters(int argc, char* argv[])
 }
 
 
-Digest blockDigest(const char* data, Size size)
+Digest blockDigest(const char* data, MD5_Size size)
 {
-    // TODO 0: implement MD5
+    hash::md5::Hash hasher;
+    hasher.process(reinterpret_cast<const hash::md5::Byte*>(data), size);
+    const auto digest = hasher.getDigest();
 
-    Size v = 0;
-    for(Size i = 0; i < size; ++i) {
-        v += data[i];
-    }
+    Digest result;
+    result.resize(hash::md5::Digest::kSize);
+    std::copy(digest.binary.begin(), digest.binary.end(), result.begin());
 
-    Digest res;
-    const size_t N = sizeof(Size);
-    res.reserve(N);
-    for(size_t i = 0; i < N; ++i) {
-        res.push_back(v & 0xFF);
-        v >>= 8;
-    }
-    return res;
+    return result;
 }
 
 
 void getSignatures(const Options& opts)
 {
-    assert(opts.blockSizeBytes > 0);
+    assert(opts.blockSizeBytes > 0 && "block size must be positive");
 
     const std::filesystem::path finp(opts.inputFilePath);
     if (!std::filesystem::exists(finp)) {
@@ -119,11 +114,14 @@ void getSignatures(const Options& opts)
     auto blockCount = size / blockSize;
     const auto lastBlockRealSize = size - blockCount * blockSize;
     const bool needToFillLastBlock = lastBlockRealSize > 0;
-    if (needToFillLastBlock) {
+    if (size == 0 || needToFillLastBlock) {
         blockCount++;
     }
 
     std::ifstream fin(opts.inputFilePath, std::ios_base::binary);
+    if (fin.bad()) {
+        throw std::runtime_error("failed to open in file: " + opts.inputFilePath);
+    }
 
     std::ostream* sout = &std::cout;
     std::unique_ptr<std::ofstream> fout;
@@ -131,6 +129,11 @@ void getSignatures(const Options& opts)
     if (!opts.outputFilePath.empty()) {
         fout = std::make_unique<std::ofstream>(opts.outputFilePath, std::ios_base::trunc);
         sout = fout.get();
+
+        if (!fout->is_open()) {
+            throw std::runtime_error("failed to open out file: " + opts.inputFilePath);
+        }
+
     }
 
     std::vector<char> block(blockSize);

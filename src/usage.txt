@@ -1,0 +1,7 @@
+"Usage:\n"
+"\n"
+"    %TOOL_NAME% <in_file_path> [<out_file_path=->] [<segment_size=1M>]\n"
+"\n"
+"<in_file_path>  - input file path\n"
+"<out_file_path> - [optional] output file path. If \"-\" given then output to stdout. Default value: -\n"
+"<segment_size>  - [optional] size in bytes of hasable segment. Support suffixes: K, M. Default value: 1M"

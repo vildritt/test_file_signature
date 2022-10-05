@@ -9,9 +9,13 @@ project(segmented_signature_cli
 
 set(SOURCES
     main.cpp
+    usage.cpp
+    md5.cpp
 )
 
 set(HEADERS
+    md5.hpp
+    usage.hpp
 )
 
 

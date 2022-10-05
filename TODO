@@ -1,17 +1,18 @@
-- MVP
-    - cli <in_file_path> <out_file_path> <buffer_size=1M>
-    - buffer_size = 512b .. 10Mb
-    - fill up last block with zeros
-    - output: for each block hex md5 digest must be given. new line delimiter not specified - make tunable
-- files sizes range: 0 - 128G
-- mem consumption <= 1G
-- OS: Win, *nix
-- hash = MD5
-- file path support: block device, net device
-- MT correctness
-- diag. log - use exceptions?
-- optimize speed for MT environment
-- no extrernal libs like OpenMP, OpenCL, etc
-- no memmap
-- boost is ok
-- diff strategies for HDD, SSD, NETWORK?
+- [0] MVP
+    + cli <in_file_path> <out_file_path> <buffer_size=1M>
+    + buffer_size = 512b .. 10Mb
+    + fill up last block with zeros
+    + output: for each block hex md5 digest must be given. new line delimiter not specified - make tunable
+    - hash = MD5
+- [0] make threaded - parallel loop woth accumulator of results to stream?
+- [0] check output file write ok before hashing
+! [0] files sizes range: 0 - 128G. Check zero file have at least one block!
+- [0] mem consumption <= 1G - eval max thread count
+- [0] OS: Win, *nix - build on win also
+- [0] file path support: block device, net device
+- [0] MT correctness
+- [0] diag. log - use exceptions?
+- [0] optimize speed for MT environment
+- [1] diff strategies for HDD, SSD, NETWORK?
+- [1] usage from file
+- [3] impl big-endian MD5 impl

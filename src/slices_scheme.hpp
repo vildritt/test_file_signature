@@ -3,13 +3,14 @@
 #pragma once
 
 #include <cstddef>
+#include "types.hpp"
 
 namespace ss {
 
 struct SlicesScheme {
-    SlicesScheme(size_t dataSize, size_t blockSize);
+    SlicesScheme(SizeBytes dataSize, SizeBytes blockSize);
 
-    size_t dataSize;
+    SizeBytes dataSize;
     size_t blockSize;
     size_t blockCount;
     size_t lastBlockRealSize;

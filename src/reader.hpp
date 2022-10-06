@@ -24,6 +24,7 @@ public:
 
 
     std::string_view readBlock(size_t blockIndex);
+    const SlicesScheme& slices() const;
 
 private:
     const std::string m_filePath;

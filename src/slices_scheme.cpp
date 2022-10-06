@@ -3,7 +3,7 @@
 #include <cassert>
 
 
-ss::SlicesScheme::SlicesScheme(size_t dataSize, size_t blockSize)
+ss::SlicesScheme::SlicesScheme(SizeBytes dataSize, SizeBytes blockSize)
     : dataSize(dataSize)
     , blockSize(blockSize)
 {

@@ -20,11 +20,13 @@ struct Options {
     std::string inputFilePath;
     std::string outputFilePath;
     ss::SizeBytes blockSizeBytes = kDefaultBlockSize;
+    std::string forcedStrategySymbol;
 };
 
 
 Options parseCliParameters(int argc, const char* argv[]);
 
+ss::MediaType guessFileMediaType(const std::string& path);
 
 } // ns misc
 

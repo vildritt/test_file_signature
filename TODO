@@ -1,10 +1,9 @@
-- [0] make threaded - parallel loop woth accumulator of results to stream?
 - [0] check output file write ok before hashing
 ! [0] files sizes range: 0 - 128G. Check zero file have at least one block!
-- [0] mem consumption <= 1G - eval max thread count
+- [0] mem consumption <= 1G - eval max thread count - estimate!
 - [0] OS: Win, *nix - build on win also
-- [0] diag. log - use exceptions and logs?
 - [0] optimize speed for MT env
+- [0] add simple logging ability
 
 - [1] diff strategies for HDD, SSD, NETWORK?
 

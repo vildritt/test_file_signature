@@ -16,6 +16,10 @@ set(SOURCES
     reader.cpp
     slices_scheme.cpp
     digest.cpp
+    thread_pool.cpp
+    strategies/abstract.cpp
+    strategies/sequental.cpp
+    strategies/threaded.cpp
 )
 
 set(HEADERS
@@ -26,6 +30,10 @@ set(HEADERS
     reader.hpp
     slices_scheme.hpp
     digest.hpp
+    thread_pool.hpp
+    strategies/abstract.hpp
+    strategies/sequental.hpp
+    strategies/threaded.hpp
 )
 
 
@@ -36,7 +44,7 @@ add_executable(segmented_signature_cli
 
 
 target_link_libraries(segmented_signature_cli
-    PRIVATE Boost::boost)
+    PRIVATE Boost::boost pthread)
 
 target_include_directories(segmented_signature_cli
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"

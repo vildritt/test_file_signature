@@ -66,6 +66,9 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
 
         if (argc >= 4) {
             opts.blockSizeBytes = misc::parseBlockSize(argv[3]);
+            if (argc >= 5) {
+                opts.forcedStrategySymbol = argv[4];
+            }
         }
     }
 
@@ -77,4 +80,11 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
     }
 
     return opts;
+}
+
+
+ss::MediaType misc::guessFileMediaType(const std::string &path)
+{
+    //TODO 0!!!: implement
+    return ss::MediaType::Unknown;
 }

@@ -8,8 +8,15 @@
 
 namespace ss {
 
-using SizeBytes = uint64_t;
+using SizeBytes = int64_t;
 using Byte = uint8_t;
+
+enum class MediaType {
+    Unknown,
+    SSD,
+    HDD,
+    NetworkDrive
+};
 
 } // ns ss
 

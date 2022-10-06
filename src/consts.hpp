@@ -8,6 +8,7 @@ namespace ss {
 
 static constexpr const SizeBytes kKiloBytes = 1024;
 static constexpr const SizeBytes kMegaBytes = 1024 * kKiloBytes;
+static constexpr const SizeBytes kGigaBytes = 1024 * kMegaBytes;
 
 #ifndef _NDEBUG
 static constexpr const SizeBytes kMinBlockSizeBytes = 1;
@@ -18,6 +19,10 @@ static constexpr const SizeBytes kMaxBlockSizeBytes = 10 * kMegaBytes;
 
 static constexpr const SizeBytes kDefaultBlockSize = 1 * kMegaBytes;
 
+static constexpr const SizeBytes kMaxFileSizeBytes = 128 * kGigaBytes;
+static constexpr const SizeBytes kMemoryConsumptionLimit = 1 * kGigaBytes;
+
+static constexpr const SizeBytes kSeqStrategyFileSizeLimitBytes = 100 * ss::kKiloBytes;
 
 } // ns ss
 

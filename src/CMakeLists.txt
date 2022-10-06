@@ -7,15 +7,25 @@ project(segmented_signature_cli
     LANGUAGES CXX)
 
 
+find_package(Boost REQUIRED)
+
 set(SOURCES
     main.cpp
-    usage.cpp
+    misc.cpp
     md5.cpp
+    reader.cpp
+    slices_scheme.cpp
+    digest.cpp
 )
 
 set(HEADERS
     md5.hpp
-    usage.hpp
+    misc.hpp
+    consts.hpp
+    types.hpp
+    reader.hpp
+    slices_scheme.hpp
+    digest.hpp
 )
 
 
@@ -24,6 +34,9 @@ add_executable(segmented_signature_cli
     ${HEADERS}
 )
 
+
+target_link_libraries(segmented_signature_cli
+    PRIVATE Boost::boost)
 
 target_include_directories(segmented_signature_cli
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"

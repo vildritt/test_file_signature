@@ -18,7 +18,12 @@ class ThreadPoolPrivate;
 class ThreadPool {
 public:
 
-    using Job = std::function<void(void)>;
+    struct Context {
+        ThreadPool* pool = nullptr;
+        void* userData = nullptr;
+    };
+
+    using Job = std::function<void(Context& ctx)>;
 
     ThreadPool(size_t nThreads = 0);
     ~ThreadPool() noexcept;

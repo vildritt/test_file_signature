@@ -4,7 +4,9 @@
 - [0] OS: Win, *nix - build on win also
 - [0] optimize speed for MT env
 - [0] add simple logging ability
-
+- [1] extract md5 and thread pool to lib
 - [1] diff strategies for HDD, SSD, NETWORK?
+- [0] impl high prec timer to test io speed?
 
 - [3] impl big-endian MD5 impl (seem impl but not checked)
+- [1] do nto create 8 threads is blocks count < 8

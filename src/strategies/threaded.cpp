@@ -17,7 +17,11 @@ ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t poolSizeHint) :
 
 void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostream &os, const SlicesScheme &slices)
 {
-    ss::ThreadPool threadPool(m_poolSizeHint);
+    if (m_poolSizeHint == 0) {
+        m_poolSizeHint = std::thread::hardware_concurrency();
+    }
+
+    ss::ThreadPool threadPool(std::min(slices.blockCount, m_poolSizeHint));
     std::mutex mutRes;
     std::condition_variable cvRes;
     std::condition_variable cvResNext;
@@ -47,6 +51,9 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
     std::atomic_size_t nextBlockResultToWrite(0);
     std::atomic_size_t nextBlockIdToShedule(0);
     std::atomic_size_t runningTasks = 0;
+
+    std::mutex mutReaders;
+    std::vector<std::shared_ptr<ss::BlockReader>> readers;
 
     while(nextBlockResultToWrite < slices.blockCount) {
         // process results
@@ -84,11 +91,20 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
             runningTasks++;
 
-            threadPool.addJob([&inFilePath, &slices, blockIndex, &mutRes, &results, &cvRes, &nextBlockResultToWrite, &cvResNext, &runningTasks]() {
+            threadPool.addJob(
+            [blockIndex, &inFilePath, &slices, &mutReaders, &readers, &mutRes, &results, &nextBlockResultToWrite, &cvResNext, &cvRes, &runningTasks]
+            (ss::ThreadPool::Context& ctx) {
 
-                // TODO 0: reuse reader with opened files in jobs!
-                ss::BlockReader reader(inFilePath, slices);
-                const auto digest = ss::Digest::hashBuffer(reader.readBlock(blockIndex));
+                if (ctx.userData == nullptr) {
+                    auto reader = std::make_shared<ss::BlockReader>(inFilePath, slices);
+                    {
+                        std::lock_guard<std::mutex> guard(mutReaders);
+                        readers.push_back(reader);
+                    }
+                    ctx.userData = reader.get();
+                }
+                ss::BlockReader* reader = static_cast<ss::BlockReader*>(ctx.userData);
+                const auto digest = ss::Digest::hashBuffer(reader->readBlock(blockIndex));
 
                 {
                     std::lock_guard<std::mutex> guard(mutRes);

@@ -12,11 +12,18 @@ namespace ss {
 
 namespace detail {
 
+struct ThreadContext {
+    std::shared_ptr<ss::ThreadPool::Context> ctx;
+    std::thread thread;
+};
+
+using ThreadContextPtr = std::shared_ptr<ThreadContext>;
+
 class ThreadPoolPrivate {
 public:
     ThreadPool* q_ptr = nullptr;
     size_t poolSize;
-    std::vector<std::thread> pool;
+    std::vector<ThreadContextPtr> pool;
 
     std::queue<ThreadPool::Job> jobs;
     std::mutex mutNewJob;
@@ -36,7 +43,8 @@ public:
         assert(poolSize > 0 && "pool size must be > 0");
     }
 
-    void worker() {
+    void worker(const std::shared_ptr<ss::ThreadPool::Context>& ctx)
+    {
         while(runs) {
             ThreadPool::Job job;
             {
@@ -63,7 +71,7 @@ public:
             }
 
             try {
-                job();
+                job(*ctx);
             } catch(const std::exception& e) {
                 std::cerr << "thread pool: job falied:" << e.what(); // TODO 0: use logger
                 std::terminate();
@@ -79,9 +87,14 @@ public:
         stop();
         runs = true;
         for(size_t i = 0; i < poolSize; ++i) {
-            pool.push_back(std::thread([this]() {
-                worker();
-            }));
+            ThreadContextPtr tctx = std::make_shared<ss::detail::ThreadContext>();
+            tctx->ctx = std::make_shared<ss::ThreadPool::Context>();
+            tctx->ctx->pool = q_ptr;
+            tctx->ctx->userData = nullptr;
+            tctx->thread = std::thread([this, tctx]() {
+                worker(tctx->ctx);
+            });
+            pool.push_back(tctx);
         }
     }
 
@@ -99,8 +112,8 @@ public:
         runs = false;
         cvNewJob.notify_all();
 
-        for(auto& thread : pool) {
-            thread.join();
+        for(auto& tc : pool) {
+            tc->thread.join();
         }
 
         pool.clear();

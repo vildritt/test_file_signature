@@ -1,4 +1,4 @@
-#include "thread_pool.hpp"
+#include <tools/thread_pool.hpp>
 
 #include <iostream>
 #include <thread>
@@ -8,12 +8,12 @@
 #include <atomic>
 #include <cassert>
 
-namespace ss {
+namespace tools {
 
 namespace detail {
 
 struct ThreadContext {
-    std::shared_ptr<ss::ThreadPool::Context> ctx;
+    std::shared_ptr<tools::ThreadPool::Context> ctx;
     std::thread thread;
 };
 
@@ -43,7 +43,7 @@ public:
         assert(poolSize > 0 && "pool size must be > 0");
     }
 
-    void worker(const std::shared_ptr<ss::ThreadPool::Context>& ctx)
+    void worker(const std::shared_ptr<tools::ThreadPool::Context>& ctx)
     {
         while(runs) {
             ThreadPool::Job job;
@@ -85,10 +85,11 @@ public:
     void start()
     {
         stop();
+
         runs = true;
         for(size_t i = 0; i < poolSize; ++i) {
-            ThreadContextPtr tctx = std::make_shared<ss::detail::ThreadContext>();
-            tctx->ctx = std::make_shared<ss::ThreadPool::Context>();
+            ThreadContextPtr tctx = std::make_shared<tools::detail::ThreadContext>();
+            tctx->ctx = std::make_shared<tools::ThreadPool::Context>();
             tctx->ctx->pool = q_ptr;
             tctx->ctx->userData = nullptr;
             tctx->thread = std::thread([this, tctx]() {
@@ -120,10 +121,10 @@ public:
     }
 };
 
-}} // ns ss::detail
+}} // ns tools::detail
 
 
-ss::ThreadPool::~ThreadPool() noexcept
+tools::ThreadPool::~ThreadPool() noexcept
 {
     try {
         stop();
@@ -132,32 +133,32 @@ ss::ThreadPool::~ThreadPool() noexcept
 }
 
 
-ss::ThreadPool::ThreadPool(size_t nThreads)
+tools::ThreadPool::ThreadPool(size_t nThreads)
     : d_ptr(new detail::ThreadPoolPrivate(this, nThreads))
 {
 
 }
 
 
-void ss::ThreadPool::start()
+void tools::ThreadPool::start()
 {
     d_ptr->start();
 }
 
 
-void ss::ThreadPool::addJob(Job job)
+void tools::ThreadPool::addJob(Job job)
 {
     d_ptr->addJob(job);
 }
 
 
-void ss::ThreadPool::stop()
+void tools::ThreadPool::stop()
 {
     d_ptr->stop();
 }
 
 
-size_t ss::ThreadPool::size() const
+size_t tools::ThreadPool::size() const
 {
     return d_ptr->poolSize;
 }

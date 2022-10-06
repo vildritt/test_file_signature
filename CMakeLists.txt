@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
+add_subdirectory(lib)
 add_subdirectory(src)
 
 #if(NOT DEFINED SS_TESTS_DISABLED)
@@ -24,5 +25,4 @@ add_custom_target(segmented_signature-docs
         README.md
         LICENSE.md
         TODO
-        src/usage.txt
 )

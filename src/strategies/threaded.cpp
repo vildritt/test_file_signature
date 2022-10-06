@@ -8,7 +8,7 @@
 #include "consts.hpp"
 #include "reader.hpp"
 #include "digest.hpp"
-#include "thread_pool.hpp"
+#include <tools/thread_pool.hpp>
 
 
 ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t poolSizeHint) :
@@ -21,7 +21,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
         m_poolSizeHint = std::thread::hardware_concurrency();
     }
 
-    ss::ThreadPool threadPool(std::min(slices.blockCount, m_poolSizeHint));
+    tools::ThreadPool threadPool(std::min(slices.blockCount, m_poolSizeHint));
     std::mutex mutRes;
     std::condition_variable cvRes;
     std::condition_variable cvResNext;
@@ -93,7 +93,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
             threadPool.addJob(
             [blockIndex, &inFilePath, &slices, &mutReaders, &readers, &mutRes, &results, &nextBlockResultToWrite, &cvResNext, &cvRes, &runningTasks]
-            (ss::ThreadPool::Context& ctx) {
+            (tools::ThreadPool::Context& ctx) {
 
                 if (ctx.userData == nullptr) {
                     auto reader = std::make_shared<ss::BlockReader>(inFilePath, slices);

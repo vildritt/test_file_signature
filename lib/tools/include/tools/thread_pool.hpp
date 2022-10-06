@@ -1,5 +1,5 @@
-#ifndef SS_THREAD_POOL_H
-#define SS_THREAD_POOL_H
+#ifndef LIB_TOOLS_THREAD_POOL_H
+#define LIB_TOOLS_THREAD_POOL_H
 #pragma once
 
 #include <vector>
@@ -7,9 +7,7 @@
 #include <functional>
 #include <memory>
 
-#include "types.hpp"
-
-namespace ss {
+namespace tools {
 
 namespace detail {
 class ThreadPoolPrivate;
@@ -42,6 +40,8 @@ private:
     std::unique_ptr<detail::ThreadPoolPrivate> d_ptr;
 };
 
-} // ns ss
 
-#endif // SS_THREAD_POOL_H
+} // ns tools
+
+
+#endif // LIB_TOOLS_THREAD_POOL_H

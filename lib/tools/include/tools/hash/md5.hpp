@@ -1,10 +1,11 @@
-#ifndef LIB_HASH_MD5_H
-#define LIB_HASH_MD5_H
+#ifndef LIB_TOOLS_HASH_MD5_H
+#define LIB_TOOLS_HASH_MD5_H
 #pragma once
 
 #include <array>
 #include <memory>
 
+namespace tools {
 namespace hash {
 namespace md5 {
 
@@ -45,6 +46,6 @@ private:
     std::unique_ptr<detail::HashPrivate> d_ptr;
 };
 
-}} // ns hash::md5
+}}} // ns tools::hash::md5
 
-#endif // LIB_HASH_MD5_H
+#endif // LIB_TOOLS_HASH_MD5_H

@@ -6,7 +6,7 @@
  *
  *  TODO 1: For asm optimizations check https://github.com/animetosho/md5-optimisation
  */
-#include "md5.hpp"
+#include <tools/hash/md5.hpp>
 
 #include <cstdint>
 #include <cstring>
@@ -23,10 +23,10 @@ namespace {
 #endif
 
 using MD5_u32 = uint32_t;
-using MD5_Size = hash::md5::Size;
+using MD5_Size = tools::hash::md5::Size;
 
 
-constexpr const hash::md5::Size kMD5DataBlockSizeBytes = 64;
+constexpr const tools::hash::md5::Size kMD5DataBlockSizeBytes = 64;
 
 
 struct MD5_State {
@@ -99,6 +99,7 @@ struct MD5_State {
 #endif
 
 
+namespace tools {
 namespace hash {
 namespace md5 {
 namespace detail {
@@ -318,47 +319,47 @@ struct HashPrivate {
 // \-- end of copy of [1]
 
 
-}}} // ns hash::md5::detail
+}}}} // ns tools::hash::md5::detail
 
 
-hash::md5::Digest::Digest()
+tools::hash::md5::Digest::Digest()
 {
     clear();
 }
 
 
-void hash::md5::Digest::clear()
+void tools::hash::md5::Digest::clear()
 {
     std::fill(binary.begin(), binary.end(), 0);
 }
 
 
-hash::md5::Hash::Hash()
+tools::hash::md5::Hash::Hash()
     : d_ptr(new hash::md5::detail::HashPrivate(this))
 {
 
 }
 
 
-hash::md5::Hash::~Hash() noexcept
+tools::hash::md5::Hash::~Hash() noexcept
 {
     // for uniq ptr
 }
 
 
-void hash::md5::Hash::reinit() noexcept
+void tools::hash::md5::Hash::reinit() noexcept
 {
     d_ptr->reinit();
 }
 
 
-void hash::md5::Hash::process(const Byte *buffer, Size size)
+void tools::hash::md5::Hash::process(const Byte *buffer, Size size)
 {
     d_ptr->updateArbitarySizedBuffer(buffer, size);
 }
 
 
-hash::md5::Digest hash::md5::Hash::getDigest() const
+tools::hash::md5::Digest tools::hash::md5::Hash::getDigest() const
 {
     hash::md5::Digest res;
     d_ptr->finalize(res.binary.data());

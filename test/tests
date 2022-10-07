@@ -1,0 +1,113 @@
+#!/bin/bash
+
+HASHER="$1/../src/segmented_signature_cli"
+PROJECT_D="$2"
+
+if [ -n "$PROJECT_D" ]; then
+	TEMP_D="$PROJECT_D/../.build/test"
+else
+	PROJECT_D="."
+	HASHER="/home/maslennikov_ag/projects/test_tasks/build-test_signature-Desktop_Qt_5_14_2_GCC_64bit-Debug/src/segmented_signature_cli"
+	TEMP_D=".build/test"
+fi
+
+mkdir -p "$TEMP_D"
+echo "[$TEMP_D]"
+
+LOG_FILE="$TEMP_D/run.log"
+DEF_OUTPUT_FILE="$TEMP_D/out.log"
+
+echo "" > "$LOG_FILE"
+
+log() {
+	local TS=`date "+%Y-%m-%d %H:%M:%S"` 
+	local MSG="[$TS]: $*"
+	echo "$MSG" >> "$LOG_FILE"
+	echo "$MSG"
+}
+
+test_file() {
+	local NAME="$1"
+	local FILE="$2"
+	local BLOCK_SIZE="$3"
+	local EXPECTED="$4"
+	local STRATEGY="$5"
+	local OUTPUT_FILE="$6"
+
+
+	[ -z $NAME ] && NAME="$FILE"
+
+	[ -z $OUTPUT_FILE ] && OUTPUT_FILE="$DEF_OUTPUT_FILE"
+
+	OUTPUT_FILE=`readlink -f "$OUTPUT_FILE"`
+	FILE=`readlink -f "$FILE"`
+	
+	local CMD="$HASHER $FILE "$OUTPUT_FILE" $BLOCK_SIZE $STRATEGY"
+
+
+	log "TEST[$NAME]: START"
+	log "$CMD"
+
+	if ! $CMD; then
+		log ERROR
+		exit 1
+	fi
+
+	if [ -n "$EXPECTED" ]; then
+		local RESULT=`cat $OUTPUT_FILE`
+		if [ "$RESULT" != "$EXPECTED" ]; then
+			log "not equals: [$RESULT] <-> [$EXPECTED]"
+			exit 1
+		fi
+	fi
+	log "TEST[$NAME]: END"	
+}
+
+
+create_file_from() {
+	local SOURCE="$1"
+	local SIZE="$2"
+	local FULL_NAME="$3"
+
+	[ -e "$FULL_NAME" ] && return 0
+	
+	touch "$FULL_NAME"
+	dd "if=$SOURCE" "of=$FULL_NAME" bs=$SIZE count=1
+}
+
+
+create_zero_file() {
+	create_file_from "/dev/zero" "$1" "$2"
+}
+
+
+create_random_file() {
+	create_file_from "/dev/urandom" "$1" "$2"
+}
+
+
+test_file simple "$PROJECT_D/test.data.01" 10 781e5e245d69b566979b86e28d23f2c7 S
+
+create_zero_file   0    "$TEMP_D/z_0"
+create_zero_file   10   "$TEMP_D/z_10"
+create_zero_file   512  "$TEMP_D/z_512"
+create_zero_file   1024 "$TEMP_D/z_1024"
+create_zero_file   100M "$TEMP_D/z_100M"
+create_random_file 100M "$TEMP_D/r_100M"
+
+test_file "" "$TEMP_D/z_0"    512 "bf619eac0cdf3f68d496ea9344137e8b" S "$TEMP_D/z_0.S.log"
+test_file "" "$TEMP_D/z_0"    512 "bf619eac0cdf3f68d496ea9344137e8b" T "$TEMP_D/z_0.T.log"
+test_file "" "$TEMP_D/z_10"   512 "bf619eac0cdf3f68d496ea9344137e8b" S "$TEMP_D/z_10.S.log"
+test_file "" "$TEMP_D/z_10"   512 "bf619eac0cdf3f68d496ea9344137e8b" T "$TEMP_D/z_10.T.log"
+test_file "" "$TEMP_D/z_512"  512 "bf619eac0cdf3f68d496ea9344137e8b" S "$TEMP_D/z_512.S.log"
+test_file "" "$TEMP_D/z_512"  512 "bf619eac0cdf3f68d496ea9344137e8b" T "$TEMP_D/z_512.T.log"
+test_file "" "$TEMP_D/z_1024" 512 "" S "$TEMP_D/z_1024.S.log"
+test_file "" "$TEMP_D/z_1024" 512 "" T "$TEMP_D/z_1024.T.log"
+test_file "" "$TEMP_D/z_100M"   0 "" S "$TEMP_D/z_100M.S.log"
+test_file "" "$TEMP_D/z_100M"   0 "" T "$TEMP_D/z_100M.T.log"
+test_file "" "$TEMP_D/r_100M"   0 "" S "$TEMP_D/r_100M.S.log"
+test_file "" "$TEMP_D/r_100M"   0 "" T "$TEMP_D/r_100M.T.log"
+test_file "" "$TEMP_D/r_100M" 512 "" S "$TEMP_D/r_100M.S.log"
+test_file "" "$TEMP_D/r_100M" 512 "" T "$TEMP_D/r_100M.T.log"
+
+[ -e "$DEF_OUTPUT_FILE" ] && rm "$DEF_OUTPUT_FILE"

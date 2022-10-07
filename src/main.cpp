@@ -36,6 +36,8 @@ void evalSignature(const misc::Options& opts)
 
     assert(strategy.get() != nullptr && "strategy not choosed");
     strategy->hash(opts.inputFilePath, *sout, slices);
+
+    *sout << std::flush;
 }
 
 

@@ -66,6 +66,9 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
 
         if (argc >= 4) {
             opts.blockSizeBytes = misc::parseBlockSize(argv[3]);
+            if (opts.blockSizeBytes <= 0) {
+                opts.blockSizeBytes = Options::kDefaultBlockSize;
+            }
             if (argc >= 5) {
                 opts.forcedStrategySymbol = argv[4];
             }

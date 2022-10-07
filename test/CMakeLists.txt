@@ -13,3 +13,6 @@ add_test(NAME simplest_data_test
 set_property(
     TEST simplest_data_test
     PROPERTY PASS_REGULAR_EXPRESSION "781e5e245d69b566979b86e28d23f2c7")
+
+add_test(NAME all_tests
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tests" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")

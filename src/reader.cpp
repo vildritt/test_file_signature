@@ -9,7 +9,7 @@ ss::BlockReader::BlockReader(const std::string &filePath, const SlicesScheme &sl
     if (m_ifs.bad()) {
         throw std::runtime_error("failed to open in file: " + filePath);
     }
-    m_blockBuffer.resize(m_slices.blockCount);
+    m_blockBuffer.resize(m_slices.blockSize);
 }
 
 
@@ -27,7 +27,9 @@ std::string_view ss::BlockReader::readBlock(size_t blockIndex)
     m_ifs.seekg(pos, std::ios_base::seekdir::_S_beg);
 
     if (islast && m_slices.needToFillUplastBlock) {
-        m_ifs.read(buffer, m_slices.lastBlockRealSize);
+        if (m_slices.lastBlockRealSize > 0) {
+            m_ifs.read(buffer, m_slices.lastBlockRealSize);
+        }
         std::fill(m_blockBuffer.begin() + m_slices.lastBlockRealSize, m_blockBuffer.end(), 0);
     } else {
         m_ifs.read(buffer, m_slices.blockSize);

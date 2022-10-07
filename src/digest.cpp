@@ -2,6 +2,7 @@
 
 #include <ios>
 #include <iomanip>
+#include <cassert>
 
 #include <tools/hash/md5.hpp>
 
@@ -23,10 +24,11 @@ void ss::Digest::set(const Byte *data, size_t size)
 
 ss::Digest ss::Digest::hashBuffer(const std::string_view &buffer)
 {
+    assert(!buffer.empty() && "buffer must contain some data");
+
     tools::hash::md5::Hash hasher;
     hasher.process(reinterpret_cast<const tools::hash::md5::Byte*>(buffer.data()), buffer.size());
     const auto digest = hasher.getDigest();
-
     return ss::Digest(digest.binary.data(), tools::hash::md5::Digest::kSize);
 }
 

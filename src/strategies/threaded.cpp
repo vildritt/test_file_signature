@@ -23,6 +23,7 @@ ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t blocksPerThread, size_t po
     , m_blocksPerThread(blocksPerThread)
 {}
 
+
 void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostream &os, const SlicesScheme &slices)
 {
     if (m_poolSizeHint == 0) {
@@ -31,8 +32,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
     size_t effBlocksPerThread = m_blocksPerThread;
     if (effBlocksPerThread == 0) {
-        const size_t kSingleReadedBlobSize = 1 * ss::kMegaBytes;
-        effBlocksPerThread = kSingleReadedBlobSize / slices.blockSize;
+        effBlocksPerThread = ss::kThreadedStrategySingleReadedBlobSize / slices.blockSize;
     }
 
 
@@ -41,8 +41,8 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
     std::condition_variable cvRes;
     std::condition_variable cvResNext;
 
-    // TODO 1: may be use priority queue
-    std::unordered_map<int, ss::Digest> results;
+    // TODO 2: may be use priority queue? but it's log(n). Need tests vs hash map with real data
+    std::unordered_map<int, std::vector<ss::Digest>> results;
     size_t maxResultStoreCount = threadPool.size();
 
     {
@@ -62,6 +62,8 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
         maxResultStoreCount = (maxResultStoreCount + maxResultStoreCountByMem) / 2;
     }
 
+    const size_t maxResultVectorStoreCount = maxResultStoreCount / effBlocksPerThread;
+
     threadPool.start();
     std::atomic_size_t nextBlockResultToWrite(0);
     size_t nextBlockIdToShedule = 0;
@@ -70,11 +72,12 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
     std::mutex mutReaders;
     std::vector<std::shared_ptr<ss::BlockReader>> readers;
 
-    TS_DLOGF("blocks: %d", slices.blockCount);
-    TS_DLOGF("block size: %d", slices.blockSize);
-    TS_DLOGF("threads: %d", threadPool.size());
-    TS_DLOGF("blocks per thread: %d", effBlocksPerThread);
-    TS_DLOGF("max storable resutls: %d", maxResultStoreCount);
+    TS_DLOGF("init: blocks: %d", slices.blockCount);
+    TS_DLOGF("init: block size: %d", slices.blockSize);
+    TS_DLOGF("init: threads: %d", threadPool.size());
+    TS_DLOGF("init: blocks per thread: %d", effBlocksPerThread);
+    TS_DLOGF("init: max storable resutls: %d", maxResultStoreCount);
+    TS_DLOGF("init: max storable resutls blobs: %d", maxResultVectorStoreCount);
 
     while(nextBlockResultToWrite < slices.blockCount) {
         // process results
@@ -86,29 +89,41 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                 while(!results.empty()) {
                     const auto it = results.find(nextBlockResultToWrite);
                     if (it != results.end()) {
-                        TS_DLOGF("flush res [%d]", it->first);
-                        os << it->second;
+                        auto digests = std::move(it->second);
+                        const size_t startBlockId = it->first;
                         results.erase(it);
-                        nextBlockResultToWrite++;
-                        if (nextBlockResultToWrite >= slices.blockCount) {
-                            return;
+
+                        // free mutex for io ops
+                        {
+                            guard.unlock();
+                            TS_DLOGF("writer: flush res [%d+%d]", startBlockId, digests.size());
+                            for(const auto& d : digests) {
+                                os << d;
+                            }
+
+                            nextBlockResultToWrite += digests.size();
+                            if (nextBlockResultToWrite >= slices.blockCount) {
+                                return;
+                            }
+
+                            guard.lock();
                         }
                     } else {
                         break;
                     }
                 }
 
-                if (results.size() >= maxResultStoreCount) {
+                // to stop produce jobs due memory limit
+                if (results.size() >= maxResultVectorStoreCount) {
                     cvResNext.wait(guard);
                 }
             }
+
+            // to stop produce jobs due threads limit
             if (runningTasks >= threadPool.size()) {
                 cvRes.wait(guard);
             }
         }
-
-        // not really useful misc limit, TODO 1: review
-        effBlocksPerThread = std::min(effBlocksPerThread, maxResultStoreCount / threadPool.size());
 
         // schedule next block
         if (nextBlockIdToShedule < slices.blockCount) {
@@ -138,21 +153,20 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
                     ss::BlockReader* reader = static_cast<ss::BlockReader*>(ctx.userData);
 
+                    std::vector<ss::Digest> seqDigests;
+                    seqDigests.reserve(endBlock - startBlock);
+
                     for(size_t i = startBlock; i < endBlock; ++i) {
-
                         //TODO 1: try to reuse hasher too, impl intf
-                        const auto digest = ss::Digest::hashBuffer(reader->readBlock(i));
+                        seqDigests.push_back(ss::Digest::hashBuffer(reader->readBlock(i)));
+                    }
+                    {
+                        std::lock_guard<std::mutex> guard(mutRes);
+                        results.emplace(startBlock, std::move(seqDigests));
+                        TS_DLOGF("worker: store res [%d+%d]", startBlock, endBlock - startBlock);
 
-                        {
-                            // TODO 0: may be also check we need to check result not overfilled and sleep on cv
-                            // TODO 0: may be for too small block size also do not report results immediately, but collect some and then push
-                            std::lock_guard<std::mutex> guard(mutRes);
-                            results[i] = digest;
-                            TS_DLOGF("store res [%d]", i);
-
-                            if (nextBlockResultToWrite == i) {
-                                cvResNext.notify_one(); // TODO 0: may be use change logic to next res is fried? or
-                            }
+                        if (nextBlockResultToWrite == startBlock) {
+                            cvResNext.notify_one();
                         }
                     }
 

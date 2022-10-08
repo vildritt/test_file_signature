@@ -4,6 +4,7 @@
 
 #include <string>
 #include <tools/formatter.hpp>
+#include <mutex>
 
 namespace tools {
 namespace log {
@@ -23,6 +24,7 @@ public:
 private:
     std::string m_prefix;
     int m_level;
+    std::mutex m_mutex;
 };
 
 
@@ -47,7 +49,7 @@ do { \
 } while(0)
 
 
-// TODO 0: possibly not compatible with MSVC, recheck!
+// TODO 1: possibly not compatible with MSVC, check!
 #define TS_LOGF(level, fmt, ...) \
     do { \
         auto& l = localLogger(); \

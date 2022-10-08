@@ -1,27 +1,27 @@
+# LEGEND
+
+- [<priority>] <task_description>
+
 # POOL
 
-! [0] threaded read several blocks
 - [0] tests
-    - correctness mult blocks
-    - THREADED speed up vs SEQ
     - diff storages (network, hdd, sdd)
-- [0] guess type by est speed, in linux try to detect storage
+- [0] check 128G (50GB whatever) file with block size 512 not out of memory
+- [0] impl high prec timer to test io speed and choose strategy
+
+- [1] guess type by est speed, in linux try to detect storage
     cat /sys/block/sda/queue/rotational
     https://stackoverflow.com/questions/2337139/where-is-a-file-mounted
     win/lin diff procs
-- [0] check 128G (50GB whatever) file with block size 512 not out of memory
-- [0] impl high prec timer to test io speed and choose strategi
 
-- [1] add simple logging ability
-- [1] OS: Win, *nix - build on win also
+- [2] OS: Win, *nix - build on win also
 
 - [3] impl big-endian MD5 impl (seem impl but not checked)
 
 # DONE
 
-+ [0] hide tests for non linux
-+ [0] check output file write ok before hashing
-+ [0] check zero file have at least one block!
 + [0] tests
     + correctness sinlge block
     + threaded gives same results as seq
+    + THREADED speed up vs SEQ
+    + correctness mult blocks

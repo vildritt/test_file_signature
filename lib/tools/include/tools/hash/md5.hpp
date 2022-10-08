@@ -43,7 +43,7 @@ public:
     void process(const Byte* buffer, Size size);
     Digest getDigest() const;
 private:
-    std::unique_ptr<detail::HashPrivate> d_ptr; // TODO 1: bad for many recreates
+    std::unique_ptr<detail::HashPrivate> d_ptr; // TODO 0: bad for perf - many re-creates, may be use pimpl from yandex video?
 };
 
 }}} // ns tools::hash::md5

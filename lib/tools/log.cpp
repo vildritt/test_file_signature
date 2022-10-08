@@ -39,7 +39,11 @@ void tools::log::Logger::log(int level, const char *msg)
     if (!checkLevel(level)) {
         return;
     }
-    //TODO 0: add timestamp
+
+    std::lock_guard<std::mutex> guard(m_mutex);
+
+    //TODO 1: add timestamp
+
     std::cerr << levelToName(level)
               << "["  << m_prefix << "]: "
               << msg

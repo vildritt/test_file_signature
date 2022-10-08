@@ -24,6 +24,8 @@ static constexpr const SizeBytes kMemoryConsumptionLimit = 1 * kGigaBytes;
 
 static constexpr const SizeBytes kSeqStrategyFileSizeLimitBytes = 100 * ss::kKiloBytes;
 
+static constexpr const SizeBytes kThreadedStrategySingleReadedBlobSize = 1 * ss::kMegaBytes;
+
 } // ns ss
 
 #endif // SS_CONSTS_H

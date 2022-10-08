@@ -10,11 +10,15 @@ project(tools
 set(SOURCES
     thread_pool.cpp
     hash/md5.cpp
+    log.cpp
+    formatter.cpp
 )
 
 set(HEADERS
     include/tools/thread_pool.hpp
     include/tools/hash/md5.hpp
+    include/tools/log.hpp
+    include/tools/formatter.hpp
 )
 
 

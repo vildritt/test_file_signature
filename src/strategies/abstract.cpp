@@ -39,7 +39,7 @@ std::unique_ptr<ss::HashStrategy> ss::HashStrategy::chooseStrategy(
     const ss::MediaType mediaType = misc::guessFileMediaType(filePath);
     switch (mediaType) {
         case ss::MediaType::HDD:
-            return std::make_unique<ThreadedHashStrategy>(std::thread::hardware_concurrency() / 2);
+            return std::make_unique<ThreadedHashStrategy>(0, std::thread::hardware_concurrency() / 2);
         case ss::MediaType::SSD:
         case ss::MediaType::NetworkDrive:
         case ss::MediaType::Unknown:

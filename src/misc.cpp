@@ -52,29 +52,60 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
 {
     Options opts;
     if (argc < 2) {
-        misc::printUsage(argv[0]);
         throw std::runtime_error("input file path not given");
     }
 
-    opts.inputFilePath = argv[1];
+    int posArgIndex = -1;
+    for(int i = 1; i < argc; ++i) {
+        const std::string_view a(argv[i]);
+        if (a.empty()) {
+            continue;
+        }
+        const size_t L = a.size();
 
-    if (argc >= 3) {
-        opts.outputFilePath = argv[2];
-        if (opts.outputFilePath == "-") {
-            opts.outputFilePath = "";
+        // is it flag?
+        if (a[0] == '-' && L > 1) {
+            for(size_t j = 1; j < L; ++j) {
+                switch(a[j]) {
+                case 'd':
+                    ++opts.logLevel;
+                    break;
+                }
+            }
+            continue;
         }
 
-        if (argc >= 4) {
-            opts.blockSizeBytes = misc::parseBlockSize(argv[3]);
-            if (opts.blockSizeBytes <= 0) {
-                opts.blockSizeBytes = Options::kDefaultBlockSize;
-            }
-            if (argc >= 5) {
-                opts.forcedStrategySymbol = argv[4];
-            }
+        // it's positional
+        ++posArgIndex;
+
+        switch(posArgIndex) {
+        case 0:
+            opts.inputFilePath = a;
+            break;
+        case 1:
+            opts.outputFilePath = a;
+            break;
+        case 2:
+            opts.blockSizeBytes = misc::parseBlockSize(std::string(a));
+            break;
+        case 3:
+            opts.forcedStrategySymbol = a;
+            break;
         }
     }
 
+    // fixes
+    if (opts.outputFilePath == "-") {
+        opts.outputFilePath = "";
+    }
+    if (opts.blockSizeBytes <= 0) {
+        opts.blockSizeBytes = Options::kDefaultBlockSize;
+    }
+
+    // checks
+    if (opts.inputFilePath.empty()) {
+        throw std::runtime_error("input file must be given");
+    }
     if (opts.blockSizeBytes < ss::kMinBlockSizeBytes) {
         throw std::runtime_error("block size is less then minimal");
     }

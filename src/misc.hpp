@@ -11,7 +11,7 @@
 namespace misc {
 
 void printUsage(const char* appPath);
-ss::SizeBytes parseBlockSize(const std::string& blockSizeText);
+ss::SizeBytes parseBlockSize(const std::string &blockSizeText);
 
 
 struct Options {
@@ -21,6 +21,7 @@ struct Options {
     std::string outputFilePath;
     ss::SizeBytes blockSizeBytes = kDefaultBlockSize;
     std::string forcedStrategySymbol;
+    int logLevel = 0;
 };
 
 

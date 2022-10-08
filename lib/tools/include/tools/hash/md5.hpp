@@ -43,7 +43,7 @@ public:
     void process(const Byte* buffer, Size size);
     Digest getDigest() const;
 private:
-    std::unique_ptr<detail::HashPrivate> d_ptr;
+    std::unique_ptr<detail::HashPrivate> d_ptr; // TODO 1: bad for many recreates
 };
 
 }}} // ns tools::hash::md5

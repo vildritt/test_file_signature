@@ -8,6 +8,12 @@
 #include <atomic>
 #include <cassert>
 
+#include <tools/log.hpp>
+
+
+TS_LOGGER("thread_pool")
+
+
 namespace tools {
 
 namespace detail {
@@ -73,11 +79,11 @@ public:
             try {
                 job(*ctx);
             } catch(const std::exception& e) {
-                std::cerr << "thread pool: job falied:" << e.what(); // TODO 0: use logger
-                std::terminate();
+                TS_ELOGF("job falied:", e.what());
+                std::abort();
             } catch(...) {
-                std::cerr << "thread pool: job falied:";
-                std::terminate();
+                TS_ELOG("job falied");
+                std::abort();
             }
         }
     }

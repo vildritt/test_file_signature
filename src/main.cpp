@@ -8,6 +8,9 @@
 #include "misc.hpp"
 #include "strategies/abstract.hpp"
 
+#include <tools/log.hpp>
+
+TS_LOGGER("main")
 
 void evalSignature(const misc::Options& opts)
 {
@@ -43,15 +46,26 @@ void evalSignature(const misc::Options& opts)
 
 int main(int argc, const char* argv[])
 {
+    misc::Options options;
     try {
-        const auto options = misc::parseCliParameters(argc, argv);
-        evalSignature(options);
+        options = misc::parseCliParameters(argc, argv);
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    } catch (...) {
-        std::cerr << "Error: unknown" << std::endl;
+        misc::printUsage(argv[0]);
+        TS_ELOGF("Parsing parameters failed: %s", e.what());
         return 1;
     }
+
+    tools::log::setGlobalLogLevel(options.logLevel);
+
+    try {
+        evalSignature(options);
+    } catch (const std::exception& e) {
+        TS_ELOG(e.what());
+        return 2;
+    } catch (...) {
+        TS_ELOG("unknown");
+        return 2;
+    }
+
     return 0;
 }

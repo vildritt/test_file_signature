@@ -4,15 +4,21 @@
 
 #include <string>
 #include <tools/formatter.hpp>
-#include <mutex>
+#include <memory>
 
 namespace tools {
 namespace log {
+
+namespace detail {
+class LoggerPrivate;
+}
 
 // very simple logger
 class Logger {
 public:
     Logger(const std::string& prefix);
+    ~Logger();
+
     inline int level() const {
         return m_level;
     }
@@ -21,10 +27,11 @@ public:
     }
 
     void log(int level, const char* msg);
+
+    tools::Formatter &formatter();
 private:
-    std::string m_prefix;
+    std::unique_ptr<detail::LoggerPrivate> d_ptr;
     int m_level;
-    std::mutex m_mutex;
 };
 
 
@@ -54,7 +61,7 @@ do { \
     do { \
         auto& l = localLogger(); \
         if (l.checkLevel(level)) { \
-            l.log(level, tools::Formatter().setArgs(fmt, __VA_ARGS__).buffer()); \
+            l.log(level, l.formatter().format(fmt, __VA_ARGS__).c_str()); \
         } \
     } while(0)
 
@@ -62,19 +69,28 @@ do { \
 enum Level {
     Error = 0,
     Warning = 1,
-    Verbose = 2,
-    Debug = 3,
+    Normal = 2,
+    Verbose = 3,
+    DebugL1 = 4,
+    DebugL2 = 5,
+    DebugL3 = 6,
 };
 
 #define TS_ELOG(msg)   TS_LOG(tools::log::Level::Error, msg)
 #define TS_WLOG(msg)   TS_LOG(tools::log::Level::Warning, msg)
+#define TS_NLOG(msg)   TS_LOG(tools::log::Level::Normal, msg)
 #define TS_VLOG(msg)   TS_LOG(tools::log::Level::Verbose, msg)
-#define TS_DLOG(msg)   TS_LOG(tools::log::Level::Debug, msg)
+#define TS_DLOG(msg)   TS_LOG(tools::log::Level::DebugL1, msg)
+#define TS_D2LOG(msg)   TS_LOG(tools::log::Level::DebugL2, msg)
+#define TS_D3LOG(msg)   TS_LOG(tools::log::Level::DebugL3, msg)
 
 #define TS_ELOGF(fmt, ...)   TS_LOGF(tools::log::Level::Error, fmt, __VA_ARGS__)
 #define TS_WLOGF(fmt, ...)   TS_LOGF(tools::log::Level::Warning, fmt, __VA_ARGS__)
+#define TS_NLOGF(fmt, ...)   TS_LOGF(tools::log::Level::Normal, fmt, __VA_ARGS__)
 #define TS_VLOGF(fmt, ...)   TS_LOGF(tools::log::Level::Verbose, fmt, __VA_ARGS__)
-#define TS_DLOGF(fmt, ...)   TS_LOGF(tools::log::Level::Debug, fmt, __VA_ARGS__)
+#define TS_DLOGF(fmt, ...)   TS_LOGF(tools::log::Level::DebugL1, fmt, __VA_ARGS__)
+#define TS_D2LOGF(fmt, ...)   TS_LOGF(tools::log::Level::DebugL2, fmt, __VA_ARGS__)
+#define TS_D3LOGF(fmt, ...)   TS_LOGF(tools::log::Level::DebugL3, fmt, __VA_ARGS__)
 
 }} // ns
 

@@ -3,18 +3,25 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 namespace tools {
 
 class Formatter
 {
 public:
-    Formatter(int bufferSize = 512);
-    Formatter& setArgs(const char *format, ...);
-    const char *buffer() const;
+    static const int kDefaultBufferSize = 512;
+
+    Formatter(char* buffer, size_t bufferSize);
+    Formatter(int bufferSize = kDefaultBufferSize);
+
+    Formatter& format(const char *format, ...);
+    const char *c_str() const;
+    std::string str() const;
 
 private:
-    std::vector<char> m_buffer;
+    std::vector<char> m_ownedBuffer;
+    char* m_buffer;
     int m_bufferSize;
 };
 

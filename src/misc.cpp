@@ -2,6 +2,13 @@
 
 #include <filesystem>
 #include <iostream>
+#ifndef _WIN32
+#include <sys/wait.h>
+#endif
+
+#include <tools/log.hpp>
+
+TS_LOGGER("misc")
 
 
 namespace  {
@@ -67,9 +74,12 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
         if (a[0] == '-' && L > 1) {
             for(size_t j = 1; j < L; ++j) {
                 switch(a[j]) {
-                case 'd':
-                    ++opts.logLevel;
-                    break;
+                    case 'd':
+                        ++opts.logLevel;
+                        break;
+                    case 'p':
+                        opts.performanceTest = true;
+                        break;
                 }
             }
             continue;
@@ -121,4 +131,20 @@ ss::MediaType misc::guessFileMediaType(const std::string &path)
 {
     //TODO 0: implement
     return ss::MediaType::Unknown;
+}
+
+
+void misc::dropOSCaches()
+{
+#ifdef _WIN32
+    //TODO 0: implement
+#else
+    std::system("sync");
+    const auto res = std::system("echo 3 > /proc/sys/vm/drop_caches");
+    if (WEXITSTATUS(res) != 0) { //TODO 1: impr priv check
+        TS_WLOG("root priveleges requered to drop OS caches");
+    }
+
+#endif
+
 }

@@ -21,6 +21,7 @@ struct Options {
     std::string outputFilePath;
     ss::SizeBytes blockSizeBytes = kDefaultBlockSize;
     std::string forcedStrategySymbol;
+    bool performanceTest = false;
     int logLevel = 0;
 };
 
@@ -28,6 +29,8 @@ struct Options {
 Options parseCliParameters(int argc, const char* argv[]);
 
 ss::MediaType guessFileMediaType(const std::string& path);
+
+void dropOSCaches();
 
 } // ns misc
 

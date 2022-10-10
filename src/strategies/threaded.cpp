@@ -18,21 +18,27 @@
 TS_LOGGER("hash.threaded")
 
 
-ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t blocksPerThread, size_t poolSizeHint)
+ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t blocksPerThread, size_t poolSizeHint, SizeBytes singleThreadSequentalRangeSize)
     : m_poolSizeHint(poolSizeHint)
     , m_blocksPerThread(blocksPerThread)
-{}
-
-
-void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostream &os, const SlicesScheme &slices)
+    , m_singleThreadSequentalRangeSize(singleThreadSequentalRangeSize)
 {
     if (m_poolSizeHint == 0) {
         m_poolSizeHint = std::thread::hardware_concurrency();
     }
+}
+
+
+
+void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostream *os, const SlicesScheme &slices)
+{
+    const SizeBytes effSingleThreadSequentalRangeSize = m_singleThreadSequentalRangeSize > 0
+            ? m_singleThreadSequentalRangeSize
+            : ss::kDefaultSingleThreadSequentalRangeSize;
 
     size_t effBlocksPerThread = m_blocksPerThread;
     if (effBlocksPerThread == 0) {
-        effBlocksPerThread = ss::kThreadedStrategySingleReadedBlobSize / slices.blockSize;
+        effBlocksPerThread = std::max<size_t>(1, effSingleThreadSequentalRangeSize / slices.blockSize);
     }
 
 
@@ -72,12 +78,12 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
     std::mutex mutReaders;
     std::vector<std::shared_ptr<ss::BlockReader>> readers;
 
-    TS_DLOGF("init: blocks: %d", slices.blockCount);
-    TS_DLOGF("init: block size: %d", slices.blockSize);
-    TS_DLOGF("init: threads: %d", threadPool.size());
-    TS_DLOGF("init: blocks per thread: %d", effBlocksPerThread);
-    TS_DLOGF("init: max storable resutls: %d", maxResultStoreCount);
-    TS_DLOGF("init: max storable resutls blobs: %d", maxResultVectorStoreCount);
+    TS_D2LOGF("init: blocks: %d", slices.blockCount);
+    TS_D2LOGF("init: block size: %d", slices.blockSize);
+    TS_D2LOGF("init: threads: %d", threadPool.size());
+    TS_D2LOGF("init: blocks per thread: %d", effBlocksPerThread);
+    TS_D2LOGF("init: max storable resutls: %d", maxResultStoreCount);
+    TS_D2LOGF("init: max storable resutls blobs: %d", maxResultVectorStoreCount);
 
     while(nextBlockResultToWrite < slices.blockCount) {
         // process results
@@ -95,10 +101,13 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
                         // free mutex for io ops
                         {
-                            guard.unlock();
-                            TS_DLOGF("writer: flush res [%d+%d]", startBlockId, digests.size());
-                            for(const auto& d : digests) {
-                                os << d;
+                            if (os) {
+                                guard.unlock();
+                                TS_D3LOGF("writer: flush res [%d+%d]", startBlockId, digests.size());
+                                for(const auto& d : digests) {
+                                    *os << d;
+                                }
+                                guard.lock();
                             }
 
                             nextBlockResultToWrite += digests.size();
@@ -106,7 +115,6 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                                 return;
                             }
 
-                            guard.lock();
                         }
                     } else {
                         break;
@@ -134,7 +142,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
             nextBlockIdToShedule = endBlock;
 
             runningTasks++;
-            TS_DLOGF("enqueue job [%d-%d]", startBlock, endBlock - startBlock);
+            TS_D3LOGF("enqueue job [%d-%d]", startBlock, endBlock - startBlock);
 
             threadPool.addJob([&, startBlock, endBlock]
             (tools::ThreadPool::Context& ctx) {
@@ -163,7 +171,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                     {
                         std::lock_guard<std::mutex> guard(mutRes);
                         results.emplace(startBlock, std::move(seqDigests));
-                        TS_DLOGF("worker: store res [%d+%d]", startBlock, endBlock - startBlock);
+                        TS_D3LOGF("worker: store res [%d+%d]", startBlock, endBlock - startBlock);
 
                         if (nextBlockResultToWrite == startBlock) {
                             cvResNext.notify_one();
@@ -186,4 +194,10 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
             });
         }
     }
+}
+
+
+std::string ss::ThreadedHashStrategy::getConfString() const
+{
+    return tools::Formatter().format("T:%d:%lld", m_poolSizeHint, m_singleThreadSequentalRangeSize).str();
 }

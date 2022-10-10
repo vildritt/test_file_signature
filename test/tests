@@ -3,12 +3,26 @@
 HASHER="$1/../src/segmented_signature_cli"
 PROJECT_D="$2"
 
+THIS=`readlink -f $0`
+THIS_D=`dirname "$THIS"`
+
 if [ -n "$PROJECT_D" ]; then
+	# if runs from cmake
 	TEMP_D="$PROJECT_D/../.build/test"
 else
+	# manual runs
 	PROJECT_D="."
-	HASHER="/home/maslennikov_ag/projects/test_tasks/build-test_signature-Desktop_Qt_5_14_2_GCC_64bit-Debug/src/segmented_signature_cli"
-	TEMP_D=".build/test"
+	# TODO 0: parametrize this path
+	HASHER="$THIS_D/../../build-test_signature-Desktop_Qt_5_14_2_GCC_64bit-Debug/src/segmented_signature_cli"
+
+	# tmpfs
+	TEMP_D_TMP="/run/user/1000"
+	# SSD
+	TEMP_D_SSD="."
+	# HDD
+	TEMP_D_HDD="/media/data/public/delme"
+
+	TEMP_D="$TEMP_D_TMP/.build/test"
 fi
 
 mkdir -p "$TEMP_D"
@@ -33,20 +47,28 @@ test_file() {
 	local EXPECTED="$4"
 	local STRATEGY="$5"
 	local OUTPUT_FILE="$6"
+	local AUX_OPTS="$7"
 
-
-	[ -z $NAME ] && NAME="$FILE"
+	FILE_BASENAME=`basename "$FILE"`
+	if [ -z $NAME ]; then 
+		NAME="FILE: $FILE_BASENAME"
+	else
+		NAME="$NAME: $FILE_BASENAME"
+	fi
 
 	[ -z $OUTPUT_FILE ] && OUTPUT_FILE="$DEF_OUTPUT_FILE"
+	if [ "$OUTPUT_FILE" != "-" ]; then	
+		OUTPUT_FILE=`readlink -f "$OUTPUT_FILE"`
+	fi
 
-	OUTPUT_FILE=`readlink -f "$OUTPUT_FILE"`
 	FILE=`readlink -f "$FILE"`
 
-	local CMD="$HASHER $FILE "$OUTPUT_FILE" $BLOCK_SIZE $STRATEGY"
+	local CMD_PARAMS="$FILE "$OUTPUT_FILE" $BLOCK_SIZE $STRATEGY $AUX_OPTS"
+	local CMD="$HASHER $CMD_PARAMS"
 
 
 	log "TEST[$NAME]: START [$STRATEGY][$BLOCK_SIZE]"
-	log "$CMD"
+	log "PARAMS: $CMD_PARAMS"
 
 	if ! /usr/bin/time -ao "$LOG_FILE" -f"%D %K %M %e %P" $CMD; then
 		log ERROR
@@ -93,8 +115,14 @@ create_zero_file   10   "$TEMP_D/z_10"
 create_zero_file   512  "$TEMP_D/z_512"
 create_zero_file   1024 "$TEMP_D/z_1024"
 create_zero_file   100M "$TEMP_D/z_100M"
-create_random_file 100M "$TEMP_D/r_100M"
 create_random_file 1024 "$TEMP_D/r_1024"
+create_random_file 10K  "$TEMP_D/r_10k"
+create_random_file 100K "$TEMP_D/r_100k"
+create_random_file 512K "$TEMP_D/r_512k"
+create_random_file 1M   "$TEMP_D/r_1M"
+create_random_file 10M  "$TEMP_D/r_10M"
+create_random_file 100M "$TEMP_D/r_100M"
+create_random_file 500M "$TEMP_D/r_500M"
 
 get_file_hash() {
 	md5sum "$1" | cut -f 1 -d" "
@@ -144,5 +172,49 @@ compare_same_temp "z_100M"
 compare_same_temp "r_100M"
 compare_same_temp "r_100Ms"
 compare_same_temp "r_1024"
+
+if [ "$EUID" -ne 0 ]; then
+ 	echo "for perf tests run under root to be able to drop OS caches"
+ 	exit
+fi
+
+
+perf_test_file_bs() {
+	local TEST_FILE="$1"
+	local BS="$2"
+
+	local OPTS="-pddd"
+
+	test_file "perf" "$TEST_FILE"   $BS "" S  "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T2 "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T4 "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T3512   "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T31K    "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T35K    "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T310K   "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T3100K  "-" $OPTS
+}
+
+perf_test_file() {
+	local TEST_FILE="$1"
+	local OPTS="-pddd"
+
+	perf_test_file_bs "$TEST_FILE" 512
+	#perf_test_file_bs "$TEST_FILE" 512k
+	#perf_test_file_bs "$TEST_FILE" 1M
+	#perf_test_file_bs "$TEST_FILE" 5M
+	#perf_test_file_bs "$TEST_FILE" 10M
+}
+
+
+#perf_test_file "$TEMP_D/r_1024"
+#perf_test_file "$TEMP_D/r_10k"
+#perf_test_file "$TEMP_D/r_100k"
+perf_test_file "$TEMP_D/r_512k"
+#perf_test_file "$TEMP_D/r_1M"
+#perf_test_file "$TEMP_D/r_10M"
+#perf_test_file "$TEMP_D/r_100M"
+#perf_test_file "$TEMP_D/r_500M"
+
 
 [ -e "$DEF_OUTPUT_FILE" ] && rm "$DEF_OUTPUT_FILE"

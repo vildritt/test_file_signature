@@ -10,6 +10,10 @@
 
 namespace ss {
 
+class HashStrategy;
+
+using HashStrategyPtr = std::shared_ptr<HashStrategy>;
+
 class HashStrategy {
 public:
     HashStrategy() = default;
@@ -20,17 +24,20 @@ public:
     HashStrategy& operator=(const HashStrategy&) = delete;
     HashStrategy& operator=(HashStrategy&&) = delete;
 
-    void hash(const std::string& inFilePath, std::ostream& os, const ss::SlicesScheme& slices);
-private:
-    virtual void doHash(const std::string& inFilePath, std::ostream& os, const ss::SlicesScheme& slices) = 0;
+    void hash(const std::string& inFilePath, std::ostream *os, const ss::SlicesScheme& slices);
 
+    std::string confString() const;
+private:
+    virtual void doHash(const std::string& inFilePath, std::ostream* os, const ss::SlicesScheme& slices) = 0;
+    virtual std::string getConfString() const;
 public:
 
-    static std::unique_ptr<HashStrategy> chooseStrategy(
+    static ss::HashStrategyPtr chooseStrategy(
             const std::string& filePath,
             const ss::SlicesScheme& slices,
             const std::string& forcedStrategySymobl);
 };
+
 
 } // ns ss
 

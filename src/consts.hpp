@@ -24,7 +24,12 @@ static constexpr const SizeBytes kMemoryConsumptionLimit = 1 * kGigaBytes;
 
 static constexpr const SizeBytes kSeqStrategyFileSizeLimitBytes = 100 * ss::kKiloBytes;
 
-static constexpr const SizeBytes kThreadedStrategySingleReadedBlobSize = 1 * ss::kMegaBytes;
+static constexpr const SizeBytes kDefaultSingleThreadSequentalRangeSize = 1 * ss::kMegaBytes;
+
+static constexpr const double kPerfTestMinRunTime_s = 10.0;
+static constexpr const int kPerfTestCountLimit = 1000;
+
+static constexpr const double kFlushCachesMinPeriod_ms = 500.0;
 
 } // ns ss
 

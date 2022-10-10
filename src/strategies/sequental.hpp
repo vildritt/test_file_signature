@@ -9,7 +9,8 @@ namespace ss {
 class SequentalHashStrategy : public HashStrategy
 {
 private:
-    void doHash(const std::string& inFilePath, std::ostream& os, const ss::SlicesScheme& slices) override;
+    void doHash(const std::string& inFilePath, std::ostream* os, const ss::SlicesScheme& slices) override;
+    std::string getConfString() const override;
 };
 
 } // ns ss

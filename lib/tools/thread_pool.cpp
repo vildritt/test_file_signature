@@ -57,6 +57,9 @@ public:
                 std::unique_lock guard(mutNewJob);
                 while(true) {
                     if (jobs.empty()) {
+                        if (!runs) {
+                            return;
+                        }
                         cvNewJob.wait(guard);
                         if (!runs) {
                             return;
@@ -116,8 +119,11 @@ public:
 
     void stop()
     {
-        runs = false;
-        cvNewJob.notify_all();
+        {
+            std::lock_guard guard(mutNewJob);
+            runs = false;
+            cvNewJob.notify_all();
+        }
 
         for(auto& tc : pool) {
             tc->thread.join();

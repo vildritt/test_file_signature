@@ -12,6 +12,7 @@ set(SOURCES
     hash/md5.cpp
     log.cpp
     formatter.cpp
+    timer.cpp
 )
 
 set(HEADERS
@@ -19,6 +20,7 @@ set(HEADERS
     include/tools/hash/md5.hpp
     include/tools/log.hpp
     include/tools/formatter.hpp
+    include/tools/timer.hpp
 )
 
 

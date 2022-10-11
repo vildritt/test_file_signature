@@ -28,10 +28,18 @@ std::string ss::HashStrategy::getConfString() const
 
 ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
         const std::string& filePath,
-        const ss::SlicesScheme& slices,
+        ss::SlicesScheme& slices,
         const std::string& forcedStrategySymbol)
 {
-    if (forcedStrategySymbol.size() > 0) {
+    const ss::MediaType mediaType = misc::guessFileMediaType(filePath);
+
+    if (slices.suggestedReadBufferSize == 0) {
+        slices.suggestedReadBufferSize = std::min(
+                    slices.dataSize,
+                    misc::suggestReadBufferSizeByMediaType(mediaType));
+    }
+
+    if (!forcedStrategySymbol.empty()) {
         if (forcedStrategySymbol == "S") {
             return std::make_shared<SequentalHashStrategy>();
         }
@@ -45,6 +53,7 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
                     forcedStrategySymbol.size() > 2
                     ? misc::parseBlockSize(forcedStrategySymbol.substr(2))
                     : 0;
+            slices.suggestedReadBufferSize = seqRangeSize;
             return std::make_shared<ThreadedHashStrategy>(0, threadCountHint, seqRangeSize);
         }
     }
@@ -53,14 +62,14 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
         return std::make_shared<SequentalHashStrategy>();
     }
 
-    if (slices.dataSize < ss::kSeqStrategyFileSizeLimitBytes) {
+    if (slices.dataSize <= slices.suggestedReadBufferSize) {
         return std::make_shared<SequentalHashStrategy>();
     }
 
-    const ss::MediaType mediaType = misc::guessFileMediaType(filePath);
     switch (mediaType) {
         case ss::MediaType::HDD:
             return std::make_shared<ThreadedHashStrategy>(0, std::thread::hardware_concurrency() / 2);
+        case ss::MediaType::Memory:
         case ss::MediaType::SSD:
         case ss::MediaType::NetworkDrive:
         case ss::MediaType::Unknown:

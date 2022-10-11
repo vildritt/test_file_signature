@@ -24,7 +24,7 @@ public:
     HashStrategy& operator=(const HashStrategy&) = delete;
     HashStrategy& operator=(HashStrategy&&) = delete;
 
-    void hash(const std::string& inFilePath, std::ostream *os, const ss::SlicesScheme& slices);
+    void hash(const std::string& inFilePath, std::ostream *os, const SlicesScheme &slices);
 
     std::string confString() const;
 private:
@@ -32,9 +32,8 @@ private:
     virtual std::string getConfString() const;
 public:
 
-    static ss::HashStrategyPtr chooseStrategy(
-            const std::string& filePath,
-            const ss::SlicesScheme& slices,
+    static ss::HashStrategyPtr chooseStrategy(const std::string& filePath,
+            SlicesScheme &slices,
             const std::string& forcedStrategySymobl);
 };
 

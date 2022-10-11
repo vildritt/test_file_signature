@@ -4,24 +4,20 @@
 
 # POOL
 
-- [0] tests
-    - diff storages (network, hdd, sdd)
 - [0] check 128G (50GB whatever) file with block size 512 not out of memory
-- [0] impl high prec timer to test io speed and choose strategy
 
 - [1] guess type by est speed, in linux try to detect storage
     cat /sys/block/sda/queue/rotational
     https://stackoverflow.com/questions/2337139/where-is-a-file-mounted
     win/lin diff procs
 
-- [2] OS: Win, *nix - build on win also
-
 - [3] impl big-endian MD5 impl (seem impl but not checked)
 
-# DONE
+# Notes
 
-+ [0] tests
-    + correctness sinlge block
-    + threaded gives same results as seq
-    + THREADED speed up vs SEQ
-    + correctness mult blocks
+- реализацию MD5 скопировал с публичного проекта и "причесал", не стал брать из boost потому что с какой-то версии md5 стала вычисляться иначе (не по spec)
+- тестировал только на linux, сборку проверял на linux gcc9, windows msvc 10.0
+- сборка на windows gcc 8.1 не пошла, возм
+- на доступ к ПК с Windows + MSVC ушло много времени к сожалению
+
+

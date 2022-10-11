@@ -20,6 +20,7 @@ struct Options {
     std::string inputFilePath;
     std::string outputFilePath;
     ss::SizeBytes blockSizeBytes = kDefaultBlockSize;
+    ss::SizeBytes suggestedReadBufferSize = 0;
     std::string forcedStrategySymbol;
     bool performanceTest = false;
     int logLevel = 0;
@@ -29,6 +30,7 @@ struct Options {
 Options parseCliParameters(int argc, const char* argv[]);
 
 ss::MediaType guessFileMediaType(const std::string& path);
+ss::SizeBytes suggestReadBufferSizeByMediaType(ss::MediaType mt);
 
 void dropOSCaches();
 

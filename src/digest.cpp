@@ -40,6 +40,9 @@ std::ostream &ss::operator<<(std::ostream &s, const Digest &d)
     for(const auto& b : d.binary) {
         s << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
     }
-    s << std::endl;
+
+    // NOTE: avoid flushinf on every short digest, also use same delimiter for all platforms (binary compat text files) TODO 1: rethink
+    s << "\n"; // std::endl;
+
     return s;
 }

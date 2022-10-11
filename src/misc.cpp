@@ -101,6 +101,9 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
         case 3:
             opts.forcedStrategySymbol = a;
             break;
+        case 4:
+            opts.suggestedReadBufferSize = misc::parseBlockSize(std::string(a));
+            break;
         }
     }
 
@@ -147,5 +150,23 @@ void misc::dropOSCaches()
     }
 
 #endif
-
 }
+
+
+ss::SizeBytes misc::suggestReadBufferSizeByMediaType(ss::MediaType mt)
+{
+    //TODO 0: tune values
+    switch (mt) {
+    case ss::MediaType::Memory:
+        return 8 * ss::kMegaBytes;
+    case ss::MediaType::SSD:
+    case ss::MediaType::HDD:
+        return 2 * ss::kMegaBytes;
+    case ss::MediaType::Unknown:
+        return 1 * ss::kMegaBytes;
+    case ss::MediaType::NetworkDrive:
+        return 512 * ss::kKiloBytes;
+    }
+    return 1 * ss::kMegaBytes;
+}
+

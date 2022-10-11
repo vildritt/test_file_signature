@@ -10,11 +10,12 @@ namespace ss {
 struct SlicesScheme {
     SlicesScheme(SizeBytes dataSize, SizeBytes blockSize);
 
-    SizeBytes dataSize;
-    size_t blockSize;
-    size_t blockCount;
-    size_t lastBlockRealSize;
-    size_t lastBlockIndex;
+    SizeBytes dataSize = 0;
+    size_t blockSize = 0;
+    size_t blockCount = 0;
+    size_t lastBlockRealSize = 0;
+    size_t lastBlockIndex = 0;
+    SizeBytes suggestedReadBufferSize = 0;
     bool needToFillUplastBlock;
 };
 

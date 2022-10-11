@@ -81,7 +81,7 @@ void tools::log::Logger::log(int level, const char *msg)
     const auto t_s = gAppStartTimer.elapsed_s();
     std::cerr << "[" << std::setw(10) << std::fixed << std::setprecision(3) << t_s << std::setw(0) << "]"
               << "[" << levelToName(level) << "]"
-              << " ["  << d_ptr->m_prefix << "]: "
+              << " [" << d_ptr->m_prefix << "]: "
               << msg
               << std::endl;
 }

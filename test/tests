@@ -6,6 +6,9 @@ PROJECT_D="$2"
 THIS=`readlink -f $0`
 THIS_D=`dirname "$THIS"`
 
+TEST_CORR="Y"
+TEST_PERF="Y"
+
 if [ -n "$PROJECT_D" ]; then
 	# if runs from cmake
 	TEMP_D="$PROJECT_D/../.build/test"
@@ -18,11 +21,11 @@ else
 	# tmpfs
 	TEMP_D_TMP="/run/user/1000"
 	# SSD
-	TEMP_D_SSD="."
+	TEMP_D_SSD="$HOME"
 	# HDD
 	TEMP_D_HDD="/media/data/public/delme"
 
-	TEMP_D="$TEMP_D_TMP/.build/test"
+	TEMP_D="$TEMP_D_SSD/.build/test"
 fi
 
 mkdir -p "$TEMP_D"
@@ -131,47 +134,50 @@ get_file_hash() {
 R1024_HASH=`get_file_hash "$TEMP_D/r_1024"`
 RZ512_HASH=`get_file_hash "$TEMP_D/z_512"`
 
-test_file "" "$TEMP_D/z_0"     512 "$RZ512_HASH" S "$TEMP_D/z_0.S.log"
-test_file "" "$TEMP_D/z_0"     512 "$RZ512_HASH" T "$TEMP_D/z_0.T.log"
-test_file "" "$TEMP_D/z_10"    512 "$RZ512_HASH" S "$TEMP_D/z_10.S.log"
-test_file "" "$TEMP_D/z_10"    512 "$RZ512_HASH" T "$TEMP_D/z_10.T.log"
-test_file "" "$TEMP_D/z_512"   512 "$RZ512_HASH" S "$TEMP_D/z_512.S.log"
-test_file "" "$TEMP_D/z_512"   512 "$RZ512_HASH" T "$TEMP_D/z_512.T.log"
-test_file "" "$TEMP_D/z_1024"  512 ""            S "$TEMP_D/z_1024.S.log"
-test_file "" "$TEMP_D/z_1024"  512 ""            T "$TEMP_D/z_1024.T.log"
-test_file "" "$TEMP_D/z_100M"    0 ""            S "$TEMP_D/z_100M.S.log"
-test_file "" "$TEMP_D/z_100M"    0 ""            T "$TEMP_D/z_100M.T.log"
-test_file "" "$TEMP_D/r_100M"    0 ""            S "$TEMP_D/r_100M.S.log"
-test_file "" "$TEMP_D/r_100M"    0 ""            T "$TEMP_D/r_100M.T.log"
-test_file "" "$TEMP_D/r_100M"  512 ""            S "$TEMP_D/r_100Ms.S.log"
-test_file "" "$TEMP_D/r_100M"  512 ""            T "$TEMP_D/r_100Ms.T.log"
-test_file "" "$TEMP_D/r_1024" 1024 "$R1024_HASH" S "$TEMP_D/r_1024.S.log"
-test_file "" "$TEMP_D/r_1024" 1024 "$R1024_HASH" T "$TEMP_D/r_1024.T.log"
+if [ "$TEST_CORR" == "Y" ]; then
 
-compare_same() {
-	local H1=`get_file_hash "$1"`
-	local H2=`get_file_hash "$2"`
-	if [ "$H1" != "$H2" ]; then
-		log "ERROR: files not equals: [$1] != [$2]"
-		exit 1
-	fi
-}
-
-compare_same_temp() {
-	local NAME="$1"
-	compare_same "$TEMP_D/$NAME.S.log" "$TEMP_D/$NAME.T.log"	
-}
-
-compare_same_temp "z_0"
-
-compare_same_temp "z_0"
-compare_same_temp "z_10"
-compare_same_temp "z_512"
-compare_same_temp "z_1024"
-compare_same_temp "z_100M"
-compare_same_temp "r_100M"
-compare_same_temp "r_100Ms"
-compare_same_temp "r_1024"
+	test_file "" "$TEMP_D/z_0"     512 "$RZ512_HASH" S "$TEMP_D/z_0.S.log"
+	test_file "" "$TEMP_D/z_0"     512 "$RZ512_HASH" T "$TEMP_D/z_0.T.log"
+	test_file "" "$TEMP_D/z_10"    512 "$RZ512_HASH" S "$TEMP_D/z_10.S.log"
+	test_file "" "$TEMP_D/z_10"    512 "$RZ512_HASH" T "$TEMP_D/z_10.T.log"
+	test_file "" "$TEMP_D/z_512"   512 "$RZ512_HASH" S "$TEMP_D/z_512.S.log"
+	test_file "" "$TEMP_D/z_512"   512 "$RZ512_HASH" T "$TEMP_D/z_512.T.log"
+	test_file "" "$TEMP_D/z_1024"  512 ""            S "$TEMP_D/z_1024.S.log"
+	test_file "" "$TEMP_D/z_1024"  512 ""            T "$TEMP_D/z_1024.T.log"
+	test_file "" "$TEMP_D/z_100M"    0 ""            S "$TEMP_D/z_100M.S.log"
+	test_file "" "$TEMP_D/z_100M"    0 ""            T "$TEMP_D/z_100M.T.log"
+	test_file "" "$TEMP_D/r_100M"    0 ""            S "$TEMP_D/r_100M.S.log"
+	test_file "" "$TEMP_D/r_100M"    0 ""            T "$TEMP_D/r_100M.T.log"
+	test_file "" "$TEMP_D/r_100M"  512 ""            S "$TEMP_D/r_100Ms.S.log"
+	test_file "" "$TEMP_D/r_100M"  512 ""            T "$TEMP_D/r_100Ms.T.log"
+	test_file "" "$TEMP_D/r_1024" 1024 "$R1024_HASH" S "$TEMP_D/r_1024.S.log"
+	test_file "" "$TEMP_D/r_1024" 1024 "$R1024_HASH" T "$TEMP_D/r_1024.T.log"
+	
+	compare_same() {
+		local H1=`get_file_hash "$1"`
+		local H2=`get_file_hash "$2"`
+		if [ "$H1" != "$H2" ]; then
+			log "ERROR: files not equals: [$1] != [$2]"
+			exit 1
+		fi
+	}
+	
+	compare_same_temp() {
+		local NAME="$1"
+		compare_same "$TEMP_D/$NAME.S.log" "$TEMP_D/$NAME.T.log"	
+	}
+	
+	compare_same_temp "z_0"
+	
+	compare_same_temp "z_0"
+	compare_same_temp "z_10"
+	compare_same_temp "z_512"
+	compare_same_temp "z_1024"
+	compare_same_temp "z_100M"
+	compare_same_temp "r_100M"
+	compare_same_temp "r_100Ms"
+	compare_same_temp "r_1024"
+fi
 
 if [ "$EUID" -ne 0 ]; then
  	echo "for perf tests run under root to be able to drop OS caches"
@@ -188,33 +194,34 @@ perf_test_file_bs() {
 	test_file "perf" "$TEST_FILE"   $BS "" S  "-" $OPTS
 	#test_file "perf" "$TEST_FILE"   $BS "" T2 "-" $OPTS
 	#test_file "perf" "$TEST_FILE"   $BS "" T4 "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T3512   "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T31K    "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T35K    "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T310K   "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T3100K  "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T2512   "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T21K    "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T25K    "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T210K   "-" $OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T2100K  "-" $OPTS
+	test_file "perf" "$TEST_FILE"   $BS "" T  "-" $OPTS
 }
 
 perf_test_file() {
 	local TEST_FILE="$1"
 	local OPTS="-pddd"
 
-	perf_test_file_bs "$TEST_FILE" 512
+	#perf_test_file_bs "$TEST_FILE" 512
 	#perf_test_file_bs "$TEST_FILE" 512k
 	#perf_test_file_bs "$TEST_FILE" 1M
-	#perf_test_file_bs "$TEST_FILE" 5M
+	perf_test_file_bs "$TEST_FILE" 5M
 	#perf_test_file_bs "$TEST_FILE" 10M
 }
 
-
-#perf_test_file "$TEMP_D/r_1024"
-#perf_test_file "$TEMP_D/r_10k"
-#perf_test_file "$TEMP_D/r_100k"
-perf_test_file "$TEMP_D/r_512k"
-#perf_test_file "$TEMP_D/r_1M"
-#perf_test_file "$TEMP_D/r_10M"
-#perf_test_file "$TEMP_D/r_100M"
-#perf_test_file "$TEMP_D/r_500M"
-
+if [ "$TEST_PERF" == "Y" ]; then
+	#perf_test_file "$TEMP_D/r_1024"
+	#perf_test_file "$TEMP_D/r_10k"
+	#perf_test_file "$TEMP_D/r_100k"
+	#perf_test_file "$TEMP_D/r_512k"
+	#perf_test_file "$TEMP_D/r_1M"
+	#perf_test_file "$TEMP_D/r_10M"
+	perf_test_file "$TEMP_D/r_100M"
+	#perf_test_file "$TEMP_D/r_500M"
+fi
 
 [ -e "$DEF_OUTPUT_FILE" ] && rm "$DEF_OUTPUT_FILE"

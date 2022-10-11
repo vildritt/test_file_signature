@@ -13,9 +13,10 @@ using Byte = uint8_t;
 
 enum class MediaType {
     Unknown,
+    Memory,
     SSD,
     HDD,
-    NetworkDrive
+    NetworkDrive,
 };
 
 } // ns ss

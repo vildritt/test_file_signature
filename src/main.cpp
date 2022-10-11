@@ -69,7 +69,8 @@ void evalSignature(const misc::Options& opts)
         }
     }
 
-    const ss::SlicesScheme slices(std::filesystem::file_size(finp), opts.blockSizeBytes);
+    ss::SlicesScheme slices(std::filesystem::file_size(finp), opts.blockSizeBytes);
+    slices.suggestedReadBufferSize = opts.suggestedReadBufferSize;
     auto strategy = ss::HashStrategy::chooseStrategy(opts.inputFilePath,
                                                      slices,
                                                      opts.forcedStrategySymbol);

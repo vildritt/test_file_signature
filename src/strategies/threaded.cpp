@@ -35,7 +35,9 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 {
     const SizeBytes effSingleThreadSequentalRangeSize = m_singleThreadSequentalRangeSize > 0
             ? m_singleThreadSequentalRangeSize
-            : ss::kDefaultSingleThreadSequentalRangeSize;
+            : (slices.suggestedReadBufferSize > 0
+               ? slices.suggestedReadBufferSize
+               : ss::kDefaultSingleThreadSequentalRangeSize);
 
     size_t effBlocksPerThread = m_blocksPerThread;
     if (effBlocksPerThread == 0) {
@@ -54,7 +56,9 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
     {
 
-        const ss::SizeBytes buffersMemConsume = static_cast<ss::SizeBytes>(slices.blockSize) * threadPool.size();
+        const ss::SizeBytes buffersMemConsume =
+                (static_cast<ss::SizeBytes>(slices.blockSize) + slices.suggestedReadBufferSize) * threadPool.size();
+
         ss::SizeBytes singleHashMemConsume = 1;
         // test hasher digest size
         {
@@ -151,7 +155,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                     // create reader for worker thread if not yet created
                     {
                         if (ctx.userData == nullptr) {
-                            auto reader = std::make_shared<ss::BlockReader>(inFilePath, slices);
+                            auto reader = std::make_shared<ss::BlockReader>(inFilePath, slices, slices.suggestedReadBufferSize);
                             {
                                 std::lock_guard<std::mutex> guard(mutReaders);
                                 readers.push_back(reader);

@@ -13,7 +13,7 @@ namespace ss {
 
 class BlockReader {
 public:
-    BlockReader(const std::string& filePath, const SlicesScheme& slices);
+    BlockReader(const std::string& filePath, const SlicesScheme& slices, const SizeBytes readBufferSize = 0);
 
     BlockReader(const BlockReader& inst);
 
@@ -31,6 +31,7 @@ private:
     const SlicesScheme m_slices;
     std::ifstream m_ifs;
     std::vector<char> m_blockBuffer;
+    std::vector<char> m_readBuffer;
 };
 
 

@@ -11,8 +11,16 @@
 
 namespace ss {
 
+/**
+ * @brief Buffered file block reader
+ */
 class BlockReader {
 public:
+    /**
+     * @param filePath - input file path
+     * @param slices - slices setup @see SlicesScheme
+     * @param readBufferSize - buffer size hint. 0 - autochoose
+     */
     BlockReader(const std::string& filePath, const SlicesScheme& slices, const SizeBytes readBufferSize = 0);
 
     BlockReader(const BlockReader& inst);
@@ -22,8 +30,16 @@ public:
     BlockReader& operator=(BlockReader&& inst) = delete;
     ~BlockReader() = default;
 
-
+    /**
+     * @brief do read block in internall buffer and get view of it
+     * @param blockIndex - zero based block index
+     * @return view to internall buffer
+     */
     std::string_view readBlock(size_t blockIndex);
+
+    /**
+     * @brief copy of original slices setup
+     */
     const SlicesScheme& slices() const;
 
 private:

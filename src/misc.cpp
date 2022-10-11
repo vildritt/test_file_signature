@@ -25,10 +25,12 @@ void misc::printUsage(const char *appPath)
 
     std::string usage = kUsage;
 
-    const auto p = usage.find(kPlaceHolder);
-    if (p != std::string::npos) {
-        const auto executableName = std::filesystem::path(appPath).filename();
-        usage = usage.replace(p, kPlaceHolder.size(), executableName.string());
+    if (appPath != nullptr) {
+        const auto p = usage.find(kPlaceHolder);
+        if (p != std::string::npos) {
+            const auto executableName = std::filesystem::path(appPath).filename();
+            usage = usage.replace(p, kPlaceHolder.size(), executableName.string());
+        }
     }
 
     std::cerr << usage << std::endl << std::endl;
@@ -48,6 +50,10 @@ ss::SizeBytes misc::parseBlockSize(const std::string &blockSizeText)
         case 'm':
         case 'M':
             res *= ss::kMegaBytes;
+            break;
+        case 'g':
+        case 'G':
+            res *= ss::kGigaBytes;
             break;
         }
     }
@@ -70,7 +76,7 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
         }
         const size_t L = a.size();
 
-        // is it flag?
+        // check - is it flag?
         if (a[0] == '-' && L > 1) {
             for(size_t j = 1; j < L; ++j) {
                 switch(a[j]) {

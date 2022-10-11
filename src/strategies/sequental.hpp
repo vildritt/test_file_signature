@@ -6,6 +6,12 @@
 
 namespace ss {
 
+/**
+ * @brief Simple one threaded sequental processing strategy.
+ * Used as
+ *  - fallback in simple cases
+ *  - reference start. in test of other strategies
+ */
 class SequentalHashStrategy : public HashStrategy
 {
 private:

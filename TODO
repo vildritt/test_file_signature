@@ -5,7 +5,7 @@
 # POOL
 
 - [0] better use adaptive strategy that is est. io ops, hashing ops and balance: thread count / thread seq read
-- [0] check 128G (50GB whatever) file with block size 512 not out of memory
++ [0] check 128G (50GB whatever) file with block size 512 not out of memory. Checked on 12 GB only
 
 - [1] guess type by est speed? in linux try to detect storages
 - [3] impl big-endian MD5 impl (seem impl but not checked)

@@ -39,12 +39,16 @@ std::string_view ss::BlockReader::readBlock(size_t blockIndex)
 
     if (islast && m_slices.needToFillUplastBlock) {
         if (m_slices.lastBlockRealSize > 0) {
-            m_ifs.read(buffer, m_slices.lastBlockRealSize);
+            if (!m_ifs.read(buffer, m_slices.lastBlockRealSize).good()) {
+                throw std::runtime_error("block read error");
+            }
             m_lastPos += m_slices.lastBlockRealSize;
         }
         std::fill(m_blockBuffer.begin() + m_slices.lastBlockRealSize, m_blockBuffer.end(), 0);
     } else {
-        m_ifs.read(buffer, m_slices.blockSize);
+        if (!m_ifs.read(buffer, m_slices.blockSize).good()) {
+            throw std::runtime_error("block read error");
+        }
         m_lastPos += m_slices.blockSize;
     }
     return std::string_view(buffer, m_slices.blockSize);

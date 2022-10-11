@@ -81,7 +81,7 @@ void tools::Timer::pause()
 }
 
 
-void tools::Timer::cont()
+void tools::Timer::resume()
 {
     if (!m_paused || !m_started) {
         return;

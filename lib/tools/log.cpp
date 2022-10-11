@@ -44,7 +44,7 @@ public:
     Logger* q_ptr = nullptr;
 
     std::string m_prefix;
-    std::mutex m_mutex;
+    std::recursive_mutex m_mutex;
     tools::Formatter m_formatter;
 
     LoggerPrivate(Logger* q_ptr)
@@ -53,7 +53,28 @@ public:
     }
 };
 
-}}}
+}
+
+
+Logger::Locker::Locker(Logger *logger) : logger(logger)
+{
+    if (logger) {
+        logger->lock();
+    }
+}
+
+
+Logger::Locker::~Locker() noexcept
+{
+    try {
+        if (logger) {
+            logger->unlock();
+        }
+    }  catch (...) {
+    }
+}
+
+}}
 
 
 tools::log::Logger::Logger(const std::string &prefix)
@@ -70,19 +91,19 @@ tools::log::Logger::~Logger()
 }
 
 
-void tools::log::Logger::log(int level, const char *msg)
+void tools::log::Logger::log(int level, const char *message)
 {
     if (!checkLevel(level)) {
         return;
     }
 
-    std::lock_guard<std::mutex> guard(d_ptr->m_mutex);
+    std::lock_guard<std::recursive_mutex> guard(d_ptr->m_mutex);
 
     const auto t_s = gAppStartTimer.elapsed_s();
     std::cerr << "[" << std::setw(10) << std::fixed << std::setprecision(3) << t_s << std::setw(0) << "]"
               << "[" << levelToName(level) << "]"
               << " [" << d_ptr->m_prefix << "]: "
-              << msg
+              << message
               << std::endl;
 }
 
@@ -90,6 +111,18 @@ void tools::log::Logger::log(int level, const char *msg)
 tools::Formatter &tools::log::Logger::formatter()
 {
     return d_ptr->m_formatter;
+}
+
+
+void tools::log::Logger::lock()
+{
+    d_ptr->m_mutex.lock();
+}
+
+
+void tools::log::Logger::unlock()
+{
+    d_ptr->m_mutex.unlock();
 }
 
 

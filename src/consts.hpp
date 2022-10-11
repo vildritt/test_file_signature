@@ -6,9 +6,13 @@
 
 namespace ss {
 
+// generic
+
 static constexpr const SizeBytes kKiloBytes = 1024;
 static constexpr const SizeBytes kMegaBytes = 1024 * kKiloBytes;
 static constexpr const SizeBytes kGigaBytes = 1024 * kMegaBytes;
+
+// limits
 
 #ifndef _NDEBUG
 static constexpr const SizeBytes kMinBlockSizeBytes = 1;
@@ -24,9 +28,10 @@ static constexpr const SizeBytes kMemoryConsumptionLimit = 1 * kGigaBytes;
 
 static constexpr const SizeBytes kDefaultSingleThreadSequentalRangeSize = 1 * ss::kMegaBytes;
 
+// perf test consts
+
 static constexpr const double kPerfTestMinRunTime_s = 10.0;
 static constexpr const int kPerfTestCountLimit = 1000;
-
 static constexpr const double kFlushCachesMinPeriod_ms = 500.0;
 
 } // ns ss

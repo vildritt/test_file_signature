@@ -19,9 +19,8 @@
 TS_LOGGER("hash.threaded")
 
 
-ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t blocksPerThread, size_t poolSizeHint, SizeBytes singleThreadSequentalRangeSize)
+ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t poolSizeHint, SizeBytes singleThreadSequentalRangeSize)
     : m_poolSizeHint(poolSizeHint)
-    , m_blocksPerThread(blocksPerThread)
     , m_singleThreadSequentalRangeSize(singleThreadSequentalRangeSize)
 {
     if (m_poolSizeHint == 0) {
@@ -33,34 +32,38 @@ ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t blocksPerThread, size_t po
 
 void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostream *os, const SlicesScheme &slices)
 {
-    const SizeBytes effSingleThreadSequentalRangeSize = m_singleThreadSequentalRangeSize > 0
+    SizeBytes effSingleThreadSequentalRangeSize = m_singleThreadSequentalRangeSize > 0
             ? m_singleThreadSequentalRangeSize
-            : (slices.suggestedReadBufferSize > 0
-               ? slices.suggestedReadBufferSize
-               : ss::kDefaultSingleThreadSequentalRangeSize);
-
-    size_t effBlocksPerThread = m_blocksPerThread;
-    if (effBlocksPerThread == 0) {
-        effBlocksPerThread = std::max<size_t>(1, effSingleThreadSequentalRangeSize / slices.blockSize);
+            : slices.suggestedReadBufferSize;
+    if (effSingleThreadSequentalRangeSize == 0) {
+        effSingleThreadSequentalRangeSize = ss::kDefaultSingleThreadSequentalRangeSize;
     }
+
+    const size_t blocksPerThread = std::max<size_t>(
+                1,
+                effSingleThreadSequentalRangeSize / slices.blockSize);
 
 
     tools::ThreadPool threadPool(std::min(slices.blockCount, m_poolSizeHint));
-    std::mutex mutRes;
-    std::condition_variable cvRes;
-    std::condition_variable cvResNext;
+
+    std::mutex mutResults;
+    std::condition_variable cvThreadsLimit;
+    std::condition_variable cvResMemLimit;
 
     // TODO 2: may be use priority queue? but it's log(n). Need tests vs hash map with real data
     std::unordered_map<size_t, std::vector<ss::Digest>> results;
+
     size_t maxResultStoreCount = threadPool.size();
 
+    // est limits
     {
-
         const ss::SizeBytes buffersMemConsume =
-                (static_cast<ss::SizeBytes>(slices.blockSize) + slices.suggestedReadBufferSize) * threadPool.size();
+                (static_cast<ss::SizeBytes>(slices.blockSize) + slices.suggestedReadBufferSize)
+                * threadPool.size();
 
         ss::SizeBytes singleHashMemConsume = 1;
-        // test hasher digest size
+        // test hasher digest size (here we do not know that digest is MD5)
+        // TODO 1: improove, impr hasher intf, get digetst size from it's intf
         {
             std::array<char, 10> test{};
             singleHashMemConsume =
@@ -73,27 +76,29 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
         maxResultStoreCount = (maxResultStoreCount + maxResultStoreCountByMem) / 2;
     }
 
-    const size_t maxResultVectorStoreCount = maxResultStoreCount / effBlocksPerThread;
+    const size_t maxResultVectorStoreCount = maxResultStoreCount / blocksPerThread;
 
     threadPool.start();
+
     std::atomic_size_t nextBlockResultToWrite(0);
     size_t nextBlockIdToShedule = 0;
-    std::atomic_size_t runningTasks = 0;
+    std::atomic_size_t runningTasksCount = 0;
 
     std::mutex mutReaders;
     std::vector<std::shared_ptr<ss::BlockReader>> readers;
+    readers.reserve(threadPool.size());
 
     TS_D2LOGF("init: blocks: %d", slices.blockCount);
     TS_D2LOGF("init: block size: %d", slices.blockSize);
     TS_D2LOGF("init: threads: %d", threadPool.size());
-    TS_D2LOGF("init: blocks per thread: %d", effBlocksPerThread);
+    TS_D2LOGF("init: blocks per thread: %d", blocksPerThread);
     TS_D2LOGF("init: max storable resutls: %d", maxResultStoreCount);
     TS_D2LOGF("init: max storable resutls blobs: %d", maxResultVectorStoreCount);
 
     while(nextBlockResultToWrite < slices.blockCount) {
-        // process results
+        // process ready results
         {
-            std::unique_lock<std::mutex> guard(mutRes);
+            std::unique_lock<std::mutex> guard(mutResults);
             if (!results.empty()) {
 
                 // print all ready sequenced results
@@ -104,7 +109,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                         const size_t startBlockId = it->first;
                         results.erase(it);
 
-                        // free mutex for io ops
+                        // free mutex during io ops
                         {
                             if (os) {
                                 guard.unlock();
@@ -128,29 +133,28 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
                 // to stop produce jobs due memory limit
                 if (results.size() >= maxResultVectorStoreCount) {
-                    cvResNext.wait(guard);
+                    cvResMemLimit.wait(guard);
                 }
             }
 
             // to stop produce jobs due threads limit
-            if (runningTasks >= threadPool.size()) {
-                cvRes.wait(guard);
+            if (runningTasksCount >= threadPool.size()) {
+                cvThreadsLimit.wait(guard);
             }
         }
 
-        // schedule next block
+        // schedule next blocks sequence
         if (nextBlockIdToShedule < slices.blockCount) {
             const size_t startBlock = nextBlockIdToShedule;
             const size_t endBlock = std::min(
-                        startBlock + effBlocksPerThread,
+                        startBlock + blocksPerThread,
                         slices.blockCount);
             nextBlockIdToShedule = endBlock;
 
-            runningTasks++;
+            runningTasksCount++;
             TS_D3LOGF("enqueue job [%d-%d]", startBlock, endBlock - startBlock);
 
-            threadPool.addJob([&, startBlock, endBlock]
-            (tools::ThreadPool::Context& ctx) {
+            threadPool.addJob([&, startBlock, endBlock](tools::ThreadPool::Context& ctx) {
                 try {
                     // create reader for worker thread if not yet created
                     {
@@ -164,6 +168,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                         }
                     }
 
+                    // get readed assigned to worker thread
                     ss::BlockReader* reader = static_cast<ss::BlockReader*>(ctx.userData);
 
                     std::vector<ss::Digest> seqDigests;
@@ -174,19 +179,18 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
                         seqDigests.push_back(ss::Digest::hashBuffer(reader->readBlock(i)));
                     }
                     {
-                        std::lock_guard<std::mutex> guard(mutRes);
+                        std::lock_guard<std::mutex> guard(mutResults);
                         results.emplace(startBlock, std::move(seqDigests));
                         TS_D3LOGF("worker: store res [%d+%d]", startBlock, endBlock - startBlock);
 
                         if (nextBlockResultToWrite == startBlock) {
-                            cvResNext.notify_one();
+                            cvResMemLimit.notify_one();
                         }
                     }
 
                     {
-                        std::lock_guard<std::mutex> guard(mutRes);
-                        cvRes.notify_one();
-                        runningTasks--;
+                        cvThreadsLimit.notify_one();
+                        runningTasksCount--;
                     }
 
                 } catch (const std::exception& e) {
@@ -204,5 +208,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
 std::string ss::ThreadedHashStrategy::getConfString() const
 {
-    return tools::Formatter().format("T:%d:%lld", m_poolSizeHint, m_singleThreadSequentalRangeSize).str();
+    return tools::Formatter().format("T:%d:%lld",
+                                     m_poolSizeHint,
+                                     m_singleThreadSequentalRangeSize).str();
 }

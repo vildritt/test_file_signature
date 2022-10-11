@@ -71,6 +71,7 @@ void evalSignature(const misc::Options& opts)
 
     ss::SlicesScheme slices(std::filesystem::file_size(finp), opts.blockSizeBytes);
     slices.suggestedReadBufferSize = opts.suggestedReadBufferSize;
+
     auto strategy = ss::HashStrategy::chooseStrategy(opts.inputFilePath,
                                                      slices,
                                                      opts.forcedStrategySymbol);
@@ -78,6 +79,7 @@ void evalSignature(const misc::Options& opts)
     assert(strategy.get() != nullptr && "strategy not choosed");
 
     if (!opts.performanceTest) {
+        // normal mode
         strategy->hash(opts.inputFilePath, sout, slices);
     } else {
         performanceTest(strategy, opts, slices);
@@ -109,7 +111,7 @@ void performanceTest(const ss::HashStrategyPtr& strategy, const misc::Options& o
 
         globalTimer.pause();
         misc::dropOSCaches();
-        globalTimer.cont();
+        globalTimer.resume();
     };
 
     size_t done = 0;

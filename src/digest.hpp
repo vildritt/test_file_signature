@@ -10,6 +10,9 @@
 
 namespace ss {
 
+/**
+ * @brief Generic digest holder, independet on hashing algo digest  lenght
+ */
 struct Digest {
     Digest(const ss::Byte* data = nullptr, size_t size = 0);
 
@@ -23,13 +26,15 @@ struct Digest {
     void set(const ss::Byte* data, size_t size);
     friend std::ostream& operator<<(std::ostream &s, const Digest& d);
 
-    // TODO 1: make possible to use other hash
+    /**
+     * @brief default block hashing routine
+     * TODO 1: make possible to use other hash
+     */
     static ss::Digest hashBuffer(const std::string_view& buffer);
 };
 
 
 std::ostream& operator<<(std::ostream &s, const Digest& d);
-
 
 
 } // ns ss

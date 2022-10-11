@@ -25,7 +25,7 @@ else
 	# SSD
 	TEMP_D_SSD="$HOME"
 	# HDD
-	TEMP_D_HDD="/media/data/public/delme"
+	TEMP_D_HDD="."
 
 	TEMP_D="$TEMP_D_MEM/.build/test"
 fi

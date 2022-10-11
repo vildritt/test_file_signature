@@ -54,7 +54,7 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
                     ? misc::parseBlockSize(forcedStrategySymbol.substr(2))
                     : 0;
             slices.suggestedReadBufferSize = seqRangeSize;
-            return std::make_shared<ThreadedHashStrategy>(0, threadCountHint, seqRangeSize);
+            return std::make_shared<ThreadedHashStrategy>(threadCountHint, seqRangeSize);
         }
     }
 
@@ -71,7 +71,7 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
             // NOTE: simple perf tests on generic notbook show no diff in speed improvemend between SSD and HDD with inc thread count
             // in both cased (SSD and HDD) speed grows with thread count grows. Need more tests
             // TODO 0: assumption that HDD can not read in mult thread, but what if it's RAID or somehting like that? Rethink!
-            return std::make_shared<ThreadedHashStrategy>(0, std::thread::hardware_concurrency() / 2);
+            return std::make_shared<ThreadedHashStrategy>(std::thread::hardware_concurrency() / 2);
         case ss::MediaType::Memory:
         case ss::MediaType::SSD:
         case ss::MediaType::NetworkDrive:

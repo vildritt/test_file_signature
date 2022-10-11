@@ -27,7 +27,7 @@ else
 	# HDD
 	TEMP_D_HDD="."
 
-	TEMP_D="$TEMP_D_MEM/.build/test"
+	TEMP_D="$TEMP_D_HDD/.build/test"
 fi
 
 mkdir -p "$TEMP_D"

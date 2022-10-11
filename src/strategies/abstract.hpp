@@ -6,49 +6,57 @@
 #include <ostream>
 #include <memory>
 
+#include <tools/hash/hasher.hpp>
+
 #include "slices_scheme.hpp"
+#include "writers/writer.hpp"
 
 namespace ss {
 
-class HashStrategy;
 
-using HashStrategyPtr = std::shared_ptr<HashStrategy>;
+class AbstractHashStrategy;
+
+
+using HashStrategyPtr = std::shared_ptr<AbstractHashStrategy>;
+
 
 /**
  * @brief Abstract hasher strategy
  */
-class HashStrategy {
+class AbstractHashStrategy {
 public:
-    HashStrategy() = default;
-    virtual ~HashStrategy() = default;
+    AbstractHashStrategy() = default;
+    virtual ~AbstractHashStrategy() = default;
 
-    HashStrategy(const HashStrategy&) = delete;
-    HashStrategy(HashStrategy&&) = delete;
-    HashStrategy& operator=(const HashStrategy&) = delete;
-    HashStrategy& operator=(HashStrategy&&) = delete;
+    AbstractHashStrategy(const AbstractHashStrategy&) = delete;
+    AbstractHashStrategy(AbstractHashStrategy&&) = delete;
+    AbstractHashStrategy& operator=(const AbstractHashStrategy&) = delete;
+    AbstractHashStrategy& operator=(AbstractHashStrategy&&) = delete;
 
     /**
-     * @brief do get hash digetst of given file
+     * @brief do get hash digest of given file
      * @param inFilePath - input file path
-     * @param os - optional output stream (can be nullptr for tests)
-     * @param slices - split file to blocks strategy
+     * @param writer - [optional] results writer (can be nullptr for tests)
+     * @param slices - split file to blocks scheme
+     * @param hasherFactory - concrete hasher producer
      */
-    void hash(const std::string& inFilePath, std::ostream *os, const SlicesScheme &slices);
+
+    void hash(const std::string& inFilePath, const ss::DigestWriterPtr& writer, const FileSlicesScheme &slices, const tools::hash::HasherFactoryPtr& hasherFactory);
 
     /**
      * @brief short descriptive string of strategy configuration. Used in debug logging
      */
-    std::string confString() const;
+    std::string configurationStringRepresentation() const;
 private:
-    virtual void doHash(const std::string& inFilePath, std::ostream* os, const ss::SlicesScheme& slices) = 0;
-    virtual std::string getConfString() const;
+    virtual void doHash(const std::string& inFilePath, const ss::DigestWriterPtr& writer, const ss::FileSlicesScheme& slices, const tools::hash::HasherFactoryPtr &hasherFactory) = 0;
+    virtual std::string getConfigurationStringRepresentation() const;
 public:
 
     /**
      * @brief default strategy chooser
      */
     static ss::HashStrategyPtr chooseStrategy(const std::string& filePath,
-            SlicesScheme &slices,
+            FileSlicesScheme &slices,
             const std::string& forcedStrategySymobl);
 };
 

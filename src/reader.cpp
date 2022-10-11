@@ -1,61 +1,63 @@
 #include "reader.hpp"
 
 #include "types.hpp"
-#include "consts.hpp"
 
 
-ss::BlockReader::BlockReader(const std::string &filePath, const SlicesScheme &slices, const ss::SizeBytes readBufferSize)
-    : m_filePath(filePath)
-    , m_slices(slices)
+ss::FileBlockReader::FileBlockReader(const std::string &inputFilePath, const FileSlicesScheme &fileSlicesScheme, const ss::SizeBytes readBufferSizeBytes)
+    : m_filePath(inputFilePath)
+    , m_fileSlicesScheme(fileSlicesScheme)
 {
-    if (readBufferSize > 0) {
-        m_readBuffer.resize(readBufferSize);
-        m_ifs.rdbuf()->pubsetbuf(m_readBuffer.data(), readBufferSize);
+    if (readBufferSizeBytes > 0) {
+        m_readBuffer.resize(readBufferSizeBytes);
+        m_fileStream.rdbuf()->pubsetbuf(m_readBuffer.data(), readBufferSizeBytes);
     }
 
-    m_ifs.open(m_filePath, std::ios_base::binary);
-    if (m_ifs.bad()) {
-        throw std::runtime_error("failed to open in file: " + filePath);
+    m_fileStream.open(m_filePath, std::ios_base::binary);
+    if (m_fileStream.bad()) {
+        throw std::runtime_error("failed to open in file: " + inputFilePath);
     }
-    m_blockBuffer.resize(m_slices.blockSize);
+
+    m_blockBuffer.resize(m_fileSlicesScheme.blockSizeBytes);
 }
 
 
-ss::BlockReader::BlockReader(const BlockReader &inst)
-    : BlockReader(inst.m_filePath, inst.m_slices, inst.m_readBuffer.size())
+ss::FileBlockReader::FileBlockReader(const FileBlockReader &inst)
+    : FileBlockReader(inst.m_filePath, inst.m_fileSlicesScheme, inst.m_readBuffer.size())
 {}
 
 
-std::string_view ss::BlockReader::readBlock(size_t blockIndex)
+std::string_view ss::FileBlockReader::readSingleBlock(size_t blockIndex)
 {
-    char* buffer = m_blockBuffer.data();
-    const bool islast = (blockIndex == m_slices.lastBlockIndex);
+    char* blockBuffer = m_blockBuffer.data();
+    const bool isLastBlock = (blockIndex == m_fileSlicesScheme.lastBlock.index);
 
-    const ss::SizeBytes pos = static_cast<SizeBytes>(m_slices.blockSize) * blockIndex;
-    if (pos != m_lastPos) {
-        m_ifs.seekg(pos, std::ios_base::beg);
-        m_lastPos = pos;
+    const ss::SizeBytes readPosition = m_fileSlicesScheme.blockSizeBytes * blockIndex;
+
+    // avoid ssystem calls due perf
+    if (readPosition != m_currentFilePosition) {
+        m_fileStream.seekg(readPosition, std::ios_base::beg);
+        m_currentFilePosition = readPosition;
     }
 
-    if (islast && m_slices.needToFillUplastBlock) {
-        if (m_slices.lastBlockRealSize > 0) {
-            if (!m_ifs.read(buffer, m_slices.lastBlockRealSize).good()) {
+    if (isLastBlock && m_fileSlicesScheme.lastBlock.needToFillUpWithZeros) {
+        if (m_fileSlicesScheme.lastBlock.realSizeBytes > 0) {
+            if (!m_fileStream.read(blockBuffer, m_fileSlicesScheme.lastBlock.realSizeBytes).good()) {
                 throw std::runtime_error("block read error");
             }
-            m_lastPos += m_slices.lastBlockRealSize;
+            m_currentFilePosition += m_fileSlicesScheme.lastBlock.realSizeBytes;
         }
-        std::fill(m_blockBuffer.begin() + m_slices.lastBlockRealSize, m_blockBuffer.end(), 0);
+        std::fill(m_blockBuffer.begin() + m_fileSlicesScheme.lastBlock.realSizeBytes, m_blockBuffer.end(), 0);
     } else {
-        if (!m_ifs.read(buffer, m_slices.blockSize).good()) {
+        if (!m_fileStream.read(blockBuffer, m_fileSlicesScheme.blockSizeBytes).good()) {
             throw std::runtime_error("block read error");
         }
-        m_lastPos += m_slices.blockSize;
+        m_currentFilePosition += m_fileSlicesScheme.blockSizeBytes;
     }
-    return std::string_view(buffer, m_slices.blockSize);
+    return std::string_view(blockBuffer, m_fileSlicesScheme.blockSizeBytes);
 }
 
 
-const ss::SlicesScheme &ss::BlockReader::slices() const
+const ss::FileSlicesScheme &ss::FileBlockReader::fileSlicesScheme() const
 {
-    return m_slices;
+    return m_fileSlicesScheme;
 }

@@ -6,7 +6,9 @@
  *
  *  TODO 1: For asm optimizations check https://github.com/animetosho/md5-optimisation
  */
-#include <tools/hash/md5.hpp>
+
+#include <tools/hash/md5_hasher.hpp>
+
 
 #include <cstdint>
 #include <cstring>
@@ -29,10 +31,11 @@ namespace {
 #endif
 
 using MD5_u32 = uint32_t;
-using MD5_Size = tools::hash::md5::Size;
+using MD5_Size = unsigned long;
 
 
-constexpr const tools::hash::md5::Size kMD5DataBlockSizeBytes = 64;
+constexpr const MD5_Size kMD5DataBlockSizeBytes = 64;
+constexpr const MD5_Size kMD5DigestSize = 4 * sizeof(MD5_u32);
 
 
 struct MD5_State {
@@ -110,8 +113,8 @@ namespace hash {
 namespace md5 {
 namespace detail {
 
-struct HashPrivate {
-    Hash* q_ptr;
+struct HasherPrivate {
+    Hasher* q_ptr;
 
     MD5_u32 lo = 0;
     MD5_u32 hi = 0;
@@ -123,14 +126,14 @@ struct HashPrivate {
     std::array<MD5_u32, kMD5DataBlockSizeBytes / sizeof(MD5_u32)> buffer;
 #endif
 
-    HashPrivate(Hash* q_ptr)
+    HasherPrivate(Hasher* q_ptr)
         : q_ptr(q_ptr)
     {
         reinit();
     }
 
 
-    const void *updateBlocks(const void *data, Size size)
+    const void *updateBlocks(const void *data, MD5_Size size)
     {
         assert(((size % kMD5DataBlockSizeBytes) == 0) && "size must be multiple of 64");
         assert(data != nullptr && "data buffer must be given");
@@ -328,46 +331,40 @@ struct HashPrivate {
 }}}} // ns tools::hash::md5::detail
 
 
-tools::hash::md5::Digest::Digest()
+tools::hash::md5::Hasher::Hasher()
+    : d_ptr(new detail::HasherPrivate(this))
 {
-    clear();
 }
 
 
-void tools::hash::md5::Digest::clear()
+tools::hash::md5::Hasher::~Hasher()
 {
-    std::fill(binary.begin(), binary.end(), 0);
+    // for d_ptr
 }
 
 
-tools::hash::md5::Hash::Hash()
-    : d_ptr(new hash::md5::detail::HashPrivate(this))
-{
-
-}
-
-
-tools::hash::md5::Hash::~Hash() noexcept
-{
-    // for uniq ptr
-}
-
-
-void tools::hash::md5::Hash::reinit() noexcept
+void tools::hash::md5::Hasher::doInitialize()
 {
     d_ptr->reinit();
 }
 
 
-void tools::hash::md5::Hash::process(const Byte *buffer, Size size)
+void tools::hash::md5::Hasher::doProcess(const std::string_view &buffer)
 {
-    d_ptr->updateArbitarySizedBuffer(buffer, size);
+    d_ptr->updateArbitarySizedBuffer(buffer.data(), buffer.size());
 }
 
 
-tools::hash::md5::Digest tools::hash::md5::Hash::getDigest() const
+tools::hash::Digest tools::hash::md5::Hasher::doFinalize()
 {
-    hash::md5::Digest res;
+    tools::hash::Digest res;
+    res.binary.resize(kMD5DigestSize);
     d_ptr->finalize(res.binary.data());
     return res;
+}
+
+
+size_t tools::hash::md5::HasherFactory::doGetDigestSize()
+{
+    return kMD5DigestSize;
 }

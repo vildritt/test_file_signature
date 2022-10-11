@@ -8,15 +8,25 @@
 #include "misc.hpp"
 #include "strategies/abstract.hpp"
 #include "consts.hpp"
+#include "writers/stream_writer.hpp"
+#include "writers/file_stream_writer.hpp"
 
+#include <tools/hash/md5_hasher.hpp>
 #include <tools/log.hpp>
 #include <tools/timer.hpp>
+
+#include <limits>
 
 TS_LOGGER("main")
 
 
-void evalSignature(const misc::Options& opts);
-void performanceTest(const ss::HashStrategyPtr& strategy, const misc::Options& opts, const ss::SlicesScheme& slices);
+void evaluateFileSignature(const misc::Options& opts);
+void performanceTest(
+        const ss::HashStrategyPtr& strategy,
+        const misc::Options& opts,
+        const ss::FileSlicesScheme& slices,
+        const tools::hash::HasherFactoryPtr &hasherFactory);
+
 
 
 int main(int argc, const char* argv[])
@@ -33,7 +43,7 @@ int main(int argc, const char* argv[])
     tools::log::setGlobalLogLevel(options.logLevel);
 
     try {
-        evalSignature(options);
+        evaluateFileSignature(options);
     } catch (const std::exception& e) {
         TS_ELOG(e.what());
         return 2;
@@ -46,58 +56,62 @@ int main(int argc, const char* argv[])
 }
 
 
-void evalSignature(const misc::Options& opts)
+void evaluateFileSignature(const misc::Options& options)
 {
+    const bool isNormalModeRun = !options.performanceTest;
+
     // simple check for input file
-    const std::filesystem::path finp(opts.inputFilePath);
-    if (!std::filesystem::exists(finp)) {
-        throw std::runtime_error("input file not exists: " + opts.inputFilePath);
+    const std::filesystem::path inputFilePath(options.inputFilePath);
+    if (!std::filesystem::exists(inputFilePath)) {
+        throw std::runtime_error("input file not exists: " + options.inputFilePath);
     }
 
-    // choose output stream
-    std::ostream* sout = opts.performanceTest
-            ? nullptr
-            : &std::cout;
+    ss::DigestWriterPtr writer;
 
-    std::unique_ptr<std::ofstream> fout;
-    if (!opts.outputFilePath.empty()) {
-        fout = std::make_unique<std::ofstream>(opts.outputFilePath, std::ios_base::trunc);
-        sout = fout.get();
-
-        if (!fout->is_open()) {
-            throw std::runtime_error("failed to open output file: " + opts.inputFilePath);
+    if (isNormalModeRun) {
+        if (options.outputFilePath.empty()) {
+            writer = std::make_shared<ss::StreamDigestWriter>(&std::cout);
+        } else {
+            writer = std::make_shared<ss::FileStreamDigestWriter>(options.outputFilePath);
         }
     }
 
-    ss::SlicesScheme slices(std::filesystem::file_size(finp), opts.blockSizeBytes);
-    slices.suggestedReadBufferSize = opts.suggestedReadBufferSize;
+    ss::FileSlicesScheme slices(
+                std::filesystem::file_size(inputFilePath),
+                options.blockSizeBytes,
+                options.suggestedReadBufferSize);
 
-    auto strategy = ss::HashStrategy::chooseStrategy(opts.inputFilePath,
+    auto strategy = ss::AbstractHashStrategy::chooseStrategy(options.inputFilePath,
                                                      slices,
-                                                     opts.forcedStrategySymbol);
+                                                     options.forcedStrategySymbol);
 
-    assert(strategy.get() != nullptr && "strategy not choosed");
+    assert(strategy.get() != nullptr && "strategy not choosed!");
 
-    if (!opts.performanceTest) {
-        // normal mode
-        strategy->hash(opts.inputFilePath, sout, slices);
+    const auto hasherFactory = std::make_shared<tools::hash::md5::HasherFactory>();
+
+    if (isNormalModeRun) {
+        strategy->hash(options.inputFilePath, writer, slices, hasherFactory);
     } else {
-        performanceTest(strategy, opts, slices);
+        performanceTest(strategy, options, slices, hasherFactory);
     }
 
-    if (sout) {
-        *sout << std::flush;
+    if (writer) {
+        writer->flush();
     }
 }
 
 
-void performanceTest(const ss::HashStrategyPtr& strategy, const misc::Options& opts, const ss::SlicesScheme& slices)
+void performanceTest(
+        const ss::HashStrategyPtr& strategy,
+        const misc::Options& opts,
+        const ss::FileSlicesScheme& slices,
+        const tools::hash::HasherFactoryPtr& hasherFactory)
 {
     const std::string name = tools::Formatter()
             .format("perf: FS=[%16lld] BS=[%10d], ST=[%15s]",
-                    slices.dataSize,
-                    slices.blockSize,
-                    strategy->confString().c_str()).str();
+                    slices.fileSizeBytes,
+                    slices.blockSizeBytes,
+                    strategy->configurationStringRepresentation().c_str()).str();
 
     tools::Timer globalTimer(name, false);
 
@@ -122,7 +136,7 @@ void performanceTest(const ss::HashStrategyPtr& strategy, const misc::Options& o
 
         dropCaches();
 
-        strategy->hash(opts.inputFilePath, nullptr, slices);
+        strategy->hash(opts.inputFilePath, nullptr, slices, hasherFactory);
         ++done;
     }
 

@@ -6,53 +6,58 @@
 #include <fstream>
 #include <vector>
 
-
 #include "slices_scheme.hpp"
 
+
 namespace ss {
+
 
 /**
  * @brief Buffered file block reader
  */
-class BlockReader {
+class FileBlockReader {
 public:
+    FileBlockReader(FileBlockReader&& inst) = delete;
+    FileBlockReader& operator=(const FileBlockReader& inst) = delete;
+    FileBlockReader& operator=(FileBlockReader&& inst) = delete;
+    ~FileBlockReader() = default;
+
+
     /**
-     * @param filePath - input file path
-     * @param slices - slices setup @see SlicesScheme
-     * @param readBufferSize - buffer size hint. 0 - autochoose
+     * @param inputFilePath       - input file path
+     * @param fileSlicesScheme    - slices setup @see SlicesScheme
+     * @param readBufferSizeBytes - buffer size hint. 0 => autochoose
      */
-    BlockReader(const std::string& filePath, const SlicesScheme& slices, const SizeBytes readBufferSize = 0);
-
-    BlockReader(const BlockReader& inst);
-
-    BlockReader(BlockReader&& inst) = delete;
-    BlockReader& operator=(const BlockReader& inst) = delete;
-    BlockReader& operator=(BlockReader&& inst) = delete;
-    ~BlockReader() = default;
+    FileBlockReader(const std::string& inputFilePath,
+                const FileSlicesScheme& fileSlicesScheme,
+                const SizeBytes readBufferSizeBytes = 0);
+    FileBlockReader(const FileBlockReader& inst);
 
     /**
-     * @brief do read block in internall buffer and get view of it
+     * @brief read block into internal buffer and return view to it
      * @param blockIndex - zero based block index
-     * @return view to internall buffer
+     * @return view to internal buffer
      */
-    std::string_view readBlock(size_t blockIndex);
+    std::string_view readSingleBlock(size_t blockIndex);
 
     /**
      * @brief copy of original slices setup
      */
-    const SlicesScheme& slices() const;
+    const FileSlicesScheme& fileSlicesScheme() const;
 
 private:
     const std::string m_filePath;
-    const SlicesScheme m_slices;
-    std::ifstream m_ifs;
-    std::vector<char> m_blockBuffer;
+    const FileSlicesScheme m_fileSlicesScheme;
+    std::ifstream m_fileStream;
+
     std::vector<char> m_readBuffer;
-    ss::SizeBytes m_lastPos = 0;
+    std::vector<char> m_blockBuffer;
+
+    ss::SizeBytes m_currentFilePosition = 0;
 };
 
 
-
 } // ns ss
+
 
 #endif // SS_READER_H

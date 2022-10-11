@@ -8,9 +8,10 @@
 namespace ss {
 
 /**
- * @brief Threaded processing startegy
+ * @brief Threaded processing startegy.
+ * lightweight class, main machiner priv. implemented
  */
-class ThreadedHashStrategy : public HashStrategy
+class ThreadedHashStrategy : public AbstractHashStrategy
 {
 public:
     /**
@@ -23,9 +24,8 @@ private:
     size_t m_poolSizeHint = 0;
     SizeBytes m_singleThreadSequentalRangeSize = 0;
 
-    void doHash(const std::string& inFilePath, std::ostream* os, const ss::SlicesScheme& slices) override;
-    std::string getConfString() const override;
-
+    void doHash(const std::string& inFilePath, const ss::DigestWriterPtr& writer, const ss::FileSlicesScheme& slices, const tools::hash::HasherFactoryPtr &hasherFactory) override;
+    std::string getConfigurationStringRepresentation() const override;
 };
 
 } // ns ss

@@ -4,12 +4,12 @@
 
 // simple types
 
-#include <cstdint>
+#include <tools/types.hpp>
 
 namespace ss {
 
-using SizeBytes = int64_t;
-using Byte = uint8_t;
+using SizeBytes = tools::SizeBytes;
+using Byte = tools::Byte;
 
 enum class MediaType {
     Unknown,

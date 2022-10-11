@@ -3,40 +3,41 @@
 #include <cassert>
 #include <thread>
 
-#include "consts.hpp"
 #include "misc.hpp"
 #include "strategies/sequental.hpp"
 #include "strategies/threaded.hpp"
 
 
-void ss::HashStrategy::hash(const std::string &inFilePath, std::ostream *os, const SlicesScheme &slices)
+void ss::AbstractHashStrategy::hash(const std::string &inFilePath, const DigestWriterPtr &writer, const FileSlicesScheme &slices, const tools::hash::HasherFactoryPtr &hasherFactory)
 {
-    doHash(inFilePath, os, slices);
-}
-
-std::string ss::HashStrategy::confString() const
-{
-    return getConfString();
+    assert(hasherFactory.get() && "give me a haser factory");
+    doHash(inFilePath, writer, slices, hasherFactory);
 }
 
 
-std::string ss::HashStrategy::getConfString() const
+std::string ss::AbstractHashStrategy::configurationStringRepresentation() const
+{
+    return getConfigurationStringRepresentation();
+}
+
+
+std::string ss::AbstractHashStrategy::getConfigurationStringRepresentation() const
 {
     return std::string();
 }
 
 
-ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
+ss::HashStrategyPtr ss::AbstractHashStrategy::chooseStrategy(
         const std::string& filePath,
-        ss::SlicesScheme& slices,
+        ss::FileSlicesScheme& slices,
         const std::string& forcedStrategySymbol)
 {
     const ss::MediaType mediaType = misc::guessFileMediaType(filePath);
 
-    if (slices.suggestedReadBufferSize == 0) {
-        slices.suggestedReadBufferSize = std::min(
-                    slices.dataSize,
-                    misc::suggestReadBufferSizeByMediaType(mediaType, slices.blockSize));
+    if (slices.suggestedReadBufferSizeBytes == 0) {
+        slices.suggestedReadBufferSizeBytes = std::min(
+                    slices.fileSizeBytes,
+                    misc::suggestReadBufferSizeByMediaType(mediaType, slices.blockSizeBytes));
     }
 
     if (!forcedStrategySymbol.empty()) {
@@ -53,7 +54,7 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
                     forcedStrategySymbol.size() > 2
                     ? misc::parseBlockSize(forcedStrategySymbol.substr(2))
                     : 0;
-            slices.suggestedReadBufferSize = seqRangeSize;
+            slices.suggestedReadBufferSizeBytes = seqRangeSize;
             return std::make_shared<ThreadedHashStrategy>(threadCountHint, seqRangeSize);
         }
     }
@@ -62,7 +63,7 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
         return std::make_shared<SequentalHashStrategy>();
     }
 
-    if (slices.dataSize <= slices.suggestedReadBufferSize) {
+    if (slices.fileSizeBytes <= slices.suggestedReadBufferSizeBytes) {
         return std::make_shared<SequentalHashStrategy>();
     }
 

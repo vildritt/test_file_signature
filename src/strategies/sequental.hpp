@@ -12,11 +12,11 @@ namespace ss {
  *  - fallback in simple cases
  *  - reference start. in test of other strategies
  */
-class SequentalHashStrategy : public HashStrategy
+class SequentalHashStrategy : public AbstractHashStrategy
 {
 private:
-    void doHash(const std::string& inFilePath, std::ostream* os, const ss::SlicesScheme& slices) override;
-    std::string getConfString() const override;
+    void doHash(const std::string& inFilePath, const ss::DigestWriterPtr& writer, const ss::FileSlicesScheme& slices, const tools::hash::HasherFactoryPtr &hasherFactory) override;
+    std::string getConfigurationStringRepresentation() const override;
 };
 
 } // ns ss

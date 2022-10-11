@@ -31,15 +31,20 @@ struct Options {
     std::string inputFilePath;
     std::string outputFilePath;
     ss::SizeBytes blockSizeBytes = kDefaultBlockSize;
+
+    /// 0 => autochoose
     ss::SizeBytes suggestedReadBufferSize = 0;
+
     /**
      * @brief used for debug diff strategies
      */
     std::string forcedStrategySymbol;
+
     /**
      * @brief do run perf tests @see main.cpp
      */
     bool performanceTest = false;
+
     int logLevel = 0;
 };
 
@@ -53,13 +58,13 @@ Options parseCliParameters(int argc, const char* argv[]);
  * @brief try to guess file media from file path. NOT IMPLEMENTED,
  * @return default value
  */
-ss::MediaType guessFileMediaType(const std::string& path);
+ss::MediaType guessFileMediaType(const std::string& filePath);
 
 /**
  * @brief try to suggest buffer size depending on media type
  * @param blockSize - hashable block size in bytes
  */
-ss::SizeBytes suggestReadBufferSizeByMediaType(ss::MediaType mt, ss::SizeBytes blockSize);
+ss::SizeBytes suggestReadBufferSizeByMediaType(ss::MediaType mediaType, ss::SizeBytes blockSizeBytes);
 
 /**
  * @brief do drop OS caches. Used in performance tests

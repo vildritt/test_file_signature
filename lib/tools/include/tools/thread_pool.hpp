@@ -20,15 +20,15 @@ class ThreadPoolPrivate;
 class ThreadPool {
 public:
 
-    /// context for pool worker, can be used to store and reuse some data for same thread worker
-    struct Context {
-        ThreadPool* pool = nullptr;
-        /// can be used to reusable user data for worker
-        void* userData = nullptr;
-    };
-
     /// abstract job
-    using Job = std::function<void(Context& ctx)>;
+    class IJob {
+    protected:
+        virtual void doRun() = 0;
+    public:
+        virtual ~IJob() {}
+        void run();
+    };
+    using JobPtr = std::shared_ptr<IJob>;
 
     /**
      * @param nThreads - hint for threads count. If = 0 -> autochoose
@@ -48,7 +48,7 @@ public:
     /**
      * @brief enqueue job. No priorities supported
      */
-    void addJob(Job job);
+    void addJob(const JobPtr& job);
     /**
      * @brief stop threads pool.
      */

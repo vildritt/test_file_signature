@@ -3,29 +3,30 @@
 #include <cassert>
 
 
-ss::SlicesScheme::SlicesScheme(SizeBytes dataSize, SizeBytes blockSize)
-    : dataSize(dataSize)
-    , blockSize(blockSize)
+ss::FileSlicesScheme::FileSlicesScheme(SizeBytes fileSizeBytes, SizeBytes blockSizeBytes, SizeBytes suggestedReadBufferSizeBytes)
+    : fileSizeBytes(fileSizeBytes)
+    , blockSizeBytes(blockSizeBytes)
+    , suggestedReadBufferSizeBytes(suggestedReadBufferSizeBytes)
 {
-    assert(blockSize > 0 && "block size must be positive");
+    assert(blockSizeBytes > 0 && "block size must be positive");
 
-    if (dataSize == 0) {
+    if (fileSizeBytes == 0) {
         blockCount = 1;
-        needToFillUplastBlock = true;
-        lastBlockRealSize = 0;
+        lastBlock.needToFillUpWithZeros = true;
+        lastBlock.realSizeBytes = 0;
     } else {
-        blockCount = dataSize / blockSize;
-        lastBlockRealSize = dataSize - blockCount * blockSize;
-        needToFillUplastBlock = lastBlockRealSize > 0;
+        blockCount = fileSizeBytes / blockSizeBytes;
+        lastBlock.realSizeBytes = fileSizeBytes - blockCount * blockSizeBytes;
+        lastBlock.needToFillUpWithZeros = lastBlock.realSizeBytes > 0;
 
-        if (needToFillUplastBlock) {
+        if (lastBlock.needToFillUpWithZeros) {
             blockCount++;
         } else {
-            lastBlockRealSize = blockSize;
+            lastBlock.realSizeBytes = blockSizeBytes;
         }
     }
 
-    lastBlockIndex = blockCount - 1;
+    lastBlock.index = blockCount - 1;
 
     assert(blockCount > 0 && "block count must be positive");
 }

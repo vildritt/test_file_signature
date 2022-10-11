@@ -19,7 +19,6 @@ namespace tools {
 namespace detail {
 
 struct ThreadContext {
-    std::shared_ptr<tools::ThreadPool::Context> ctx;
     std::thread thread;
 };
 
@@ -31,7 +30,7 @@ public:
     size_t poolSize;
     std::vector<ThreadContextPtr> pool;
 
-    std::queue<ThreadPool::Job> jobs;
+    std::queue<ThreadPool::JobPtr> jobs;
     std::mutex mutNewJob;
     std::condition_variable cvNewJob;
     std::atomic_bool runs = false;
@@ -49,10 +48,10 @@ public:
         assert(poolSize > 0 && "pool size must be > 0");
     }
 
-    void worker(const std::shared_ptr<tools::ThreadPool::Context>& ctx)
+    void worker()
     {
         while(runs) {
-            ThreadPool::Job job;
+            ThreadPool::JobPtr job;
             {
                 std::unique_lock guard(mutNewJob);
                 while(true) {
@@ -80,7 +79,7 @@ public:
             }
 
             try {
-                job(*ctx);
+                job->run();
             } catch(const std::exception& e) {
                 TS_ELOGF("job falied:", e.what());
                 std::abort();
@@ -98,17 +97,14 @@ public:
         runs = true;
         for(size_t i = 0; i < poolSize; ++i) {
             ThreadContextPtr tctx = std::make_shared<tools::detail::ThreadContext>();
-            tctx->ctx = std::make_shared<tools::ThreadPool::Context>();
-            tctx->ctx->pool = q_ptr;
-            tctx->ctx->userData = nullptr;
-            tctx->thread = std::thread([this, tctx]() {
-                worker(tctx->ctx);
+            tctx->thread = std::thread([this]() {
+                worker();
             });
             pool.push_back(tctx);
         }
     }
 
-    void addJob(ThreadPool::Job job)
+    void addJob(const ThreadPool::JobPtr& job)
     {
         {
             std::lock_guard<std::mutex> guard(mutNewJob);
@@ -133,7 +129,16 @@ public:
     }
 };
 
-}} // ns tools::detail
+}
+
+
+} // ns tools::detail
+
+
+void tools::ThreadPool::IJob::run()
+{
+    doRun();
+}
 
 
 tools::ThreadPool::~ThreadPool() noexcept
@@ -158,7 +163,7 @@ void tools::ThreadPool::start()
 }
 
 
-void tools::ThreadPool::addJob(Job job)
+void tools::ThreadPool::addJob(const JobPtr &job)
 {
     d_ptr->addJob(job);
 }

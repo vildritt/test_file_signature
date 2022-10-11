@@ -12,10 +12,14 @@ set(SOURCES
     misc.cpp
     reader.cpp
     slices_scheme.cpp
-    digest.cpp
     strategies/abstract.cpp
     strategies/sequental.cpp
     strategies/threaded.cpp
+    strategies/threaded/shared_context.cpp
+    strategies/threaded/reader_and_hasher_job.cpp
+    writers/writer.cpp
+    writers/stream_writer.cpp
+    writers/file_stream_writer.cpp
 )
 
 set(HEADERS
@@ -24,10 +28,14 @@ set(HEADERS
     types.hpp
     reader.hpp
     slices_scheme.hpp
-    digest.hpp
     strategies/abstract.hpp
     strategies/sequental.hpp
     strategies/threaded.hpp
+    strategies/threaded/shared_context.hpp
+    strategies/threaded/reader_and_hasher_job.hpp
+    writers/writer.hpp
+    writers/stream_writer.hpp
+    writers/file_stream_writer.hpp
 )
 
 

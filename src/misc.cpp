@@ -8,6 +8,7 @@
 
 #include <tools/log.hpp>
 
+
 TS_LOGGER("misc")
 
 
@@ -18,6 +19,7 @@ const char * kUsage =
 ;
 
 } // ns a
+
 
 void misc::printUsage(const char *appPath)
 {
@@ -63,28 +65,28 @@ ss::SizeBytes misc::parseBlockSize(const std::string &blockSizeText)
 
 misc::Options misc::parseCliParameters(int argc, const char *argv[])
 {
-    Options opts;
+    Options options;
     if (argc < 2) {
         throw std::runtime_error("input file path not given");
     }
 
-    int posArgIndex = -1;
+    int positionalArgumentIndex = -1;
     for(int i = 1; i < argc; ++i) {
-        const std::string_view a(argv[i]);
-        if (a.empty()) {
+        const std::string_view currArg(argv[i]);
+        if (currArg.empty()) {
             continue;
         }
-        const size_t L = a.size();
+        const size_t argLength = currArg.size();
 
         // check - is it flag?
-        if (a[0] == '-' && L > 1) {
-            for(size_t j = 1; j < L; ++j) {
-                switch(a[j]) {
+        if (currArg[0] == '-' && argLength > 1) {
+            for(size_t j = 1; j < argLength; ++j) {
+                switch(currArg[j]) {
                     case 'd':
-                        ++opts.logLevel;
+                        ++options.logLevel;
                         break;
                     case 'p':
-                        opts.performanceTest = true;
+                        options.performanceTest = true;
                         break;
                 }
             }
@@ -92,51 +94,51 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
         }
 
         // it's positional
-        ++posArgIndex;
+        ++positionalArgumentIndex;
 
-        switch(posArgIndex) {
+        switch(positionalArgumentIndex) {
         case 0:
-            opts.inputFilePath = a;
+            options.inputFilePath = currArg;
             break;
         case 1:
-            opts.outputFilePath = a;
+            options.outputFilePath = currArg;
             break;
         case 2:
-            opts.blockSizeBytes = misc::parseBlockSize(std::string(a));
+            options.blockSizeBytes = misc::parseBlockSize(std::string(currArg));
             break;
         case 3:
-            opts.forcedStrategySymbol = a;
+            options.forcedStrategySymbol = currArg;
             break;
         case 4:
-            opts.suggestedReadBufferSize = misc::parseBlockSize(std::string(a));
+            options.suggestedReadBufferSize = misc::parseBlockSize(std::string(currArg));
             break;
         }
     }
 
     // fixes
-    if (opts.outputFilePath == "-") {
-        opts.outputFilePath = "";
+    if (options.outputFilePath == "-") {
+        options.outputFilePath = "";
     }
-    if (opts.blockSizeBytes <= 0) {
-        opts.blockSizeBytes = Options::kDefaultBlockSize;
+    if (options.blockSizeBytes <= 0) {
+        options.blockSizeBytes = Options::kDefaultBlockSize;
     }
 
     // checks
-    if (opts.inputFilePath.empty()) {
+    if (options.inputFilePath.empty()) {
         throw std::runtime_error("input file must be given");
     }
-    if (opts.blockSizeBytes < ss::kMinBlockSizeBytes) {
+    if (options.blockSizeBytes < ss::kMinBlockSizeBytes) {
         throw std::runtime_error("block size is less then minimal");
     }
-    if (opts.blockSizeBytes > ss::kMaxBlockSizeBytes) {
+    if (options.blockSizeBytes > ss::kMaxBlockSizeBytes) {
         throw std::runtime_error("block size is greater then maximal");
     }
 
-    return opts;
+    return options;
 }
 
 
-ss::MediaType misc::guessFileMediaType(const std::string &path)
+ss::MediaType misc::guessFileMediaType(const std::string &filePath)
 {
     //TODO 0: implement!
     //    cat /sys/block/sda/queue/rotational
@@ -158,22 +160,21 @@ void misc::dropOSCaches()
     if (WEXITSTATUS(res) != 0) { //TODO 1: impr priv check
         TS_WLOG("root priveleges requered to drop OS caches");
     }
-
 #endif
 }
 
 
-ss::SizeBytes misc::suggestReadBufferSizeByMediaType(ss::MediaType mt, ss::SizeBytes blockSize)
+ss::SizeBytes misc::suggestReadBufferSizeByMediaType(ss::MediaType mediaType, ss::SizeBytes blockSizeBytes)
 {
-    //TODO 0: tune values
-    switch (mt) {
+    //TODO 0: tune suggested values after perf tests
+    switch (mediaType) {
     case ss::MediaType::Memory:
-        return std::max(8 * ss::kMegaBytes, blockSize);
+        return std::max(8 * ss::kMegaBytes, blockSizeBytes);
     case ss::MediaType::SSD:
-        return std::max(2 * ss::kMegaBytes, blockSize);
+        return std::max(2 * ss::kMegaBytes, blockSizeBytes);
     case ss::MediaType::HDD:
          // tests (1 laptop) shows for small blocks after 1 MB no perf grow
-        return std::max(1 * ss::kMegaBytes, blockSize);
+        return std::max(1 * ss::kMegaBytes, blockSizeBytes);
     case ss::MediaType::Unknown:
         return 1 * ss::kMegaBytes;
     case ss::MediaType::NetworkDrive:

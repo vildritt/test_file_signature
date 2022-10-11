@@ -23,7 +23,7 @@ struct Digest {
     void set(const ss::Byte* data, size_t size);
     friend std::ostream& operator<<(std::ostream &s, const Digest& d);
 
-    // TODO 1: make possible to use other hash, use intf class
+    // TODO 1: make possible to use other hash
     static ss::Digest hashBuffer(const std::string_view& buffer);
 };
 

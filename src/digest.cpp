@@ -27,7 +27,9 @@ ss::Digest ss::Digest::hashBuffer(const std::string_view &buffer)
     assert(!buffer.empty() && "buffer must contain some data");
 
     tools::hash::md5::Hash hasher;
-    hasher.process(reinterpret_cast<const tools::hash::md5::Byte*>(buffer.data()), buffer.size());
+    hasher.process(
+                reinterpret_cast<const tools::hash::md5::Byte*>(buffer.data()),
+                static_cast<tools::hash::md5::Size>(buffer.size()));
     const auto digest = hasher.getDigest();
     return ss::Digest(digest.binary.data(), tools::hash::md5::Digest::kSize);
 }

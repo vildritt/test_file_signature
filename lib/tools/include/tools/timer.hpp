@@ -25,7 +25,7 @@ public:
     double elapsed_ms(bool restart = false);
     double elapsed_s(bool restart = false);
 
-    void log(int statCount = 0, bool restart = false);
+    void log(size_t statCount = 0, bool restart = false);
 
 private:
     std::string m_name;
@@ -37,7 +37,7 @@ private:
     bool m_paused = false;
     uint64_t m_elapsedInPausesAccum_ns = 0;
 
-    uint64_t elapsedNsFromTs(const std::chrono::system_clock::time_point &tp) const;
+    static uint64_t elapsedNsFromTs(const Clock::time_point &tp);
 };
 
 

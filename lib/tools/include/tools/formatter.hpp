@@ -22,7 +22,7 @@ public:
 private:
     std::vector<char> m_ownedBuffer;
     char* m_buffer;
-    int m_bufferSize;
+    size_t m_bufferSize;
 };
 
 

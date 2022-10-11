@@ -28,7 +28,7 @@ void misc::printUsage(const char *appPath)
     const auto p = usage.find(kPlaceHolder);
     if (p != std::string::npos) {
         const auto executableName = std::filesystem::path(appPath).filename();
-        usage = usage.replace(p, kPlaceHolder.size(), executableName);
+        usage = usage.replace(p, kPlaceHolder.size(), executableName.string());
     }
 
     std::cerr << usage << std::endl << std::endl;
@@ -138,6 +138,7 @@ void misc::dropOSCaches()
 {
 #ifdef _WIN32
     //TODO 0: implement
+    TS_WLOG("dropOSCaches not implemented");
 #else
     std::system("sync");
     const auto res = std::system("echo 3 > /proc/sys/vm/drop_caches");

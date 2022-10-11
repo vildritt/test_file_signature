@@ -68,4 +68,6 @@ ss::HashStrategyPtr ss::HashStrategy::chooseStrategy(
     }
 
     assert(false && "strategy not choosed");
+
+    return std::make_shared<SequentalHashStrategy>();
 }

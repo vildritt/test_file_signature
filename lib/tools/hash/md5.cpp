@@ -14,12 +14,18 @@
 
 namespace {
 
+#ifdef _WIN32
+// TODO 0: improove detection for arm etc
+#define HASHER_MD5_LE_CPU 1
+#define HASHER_MD5_BE_CPU 0
+#else
 #if defined(__i386__) || defined(__x86_64__) || defined(__vax__)
 #define HASHER_MD5_LE_CPU 1
 #define HASHER_MD5_BE_CPU 0
 #else
 #define HASHER_MD5_LE_CPU 0
 #define HASHER_MD5_BE_CPU 1
+#endif
 #endif
 
 using MD5_u32 = uint32_t;
@@ -114,7 +120,7 @@ struct HashPrivate {
     std::array<unsigned char, kMD5DataBlockSizeBytes> buffer;
 #endif
 #if HASHER_MD5_BE_CPU
-    std::array<MD5_u32, kMD5DataBlockSize / sizeof(MD5_u32)> buffer;
+    std::array<MD5_u32, kMD5DataBlockSizeBytes / sizeof(MD5_u32)> buffer;
 #endif
 
     HashPrivate(Hash* q_ptr)

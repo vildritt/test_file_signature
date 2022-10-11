@@ -1,5 +1,5 @@
-#ifndef LIB_TOOLS_HASH_LOG_H
-#define LIB_TOOLS_HASH_LOG_H
+#ifndef LIB_TOOLS_LOG_H
+#define LIB_TOOLS_LOG_H
 #pragma once
 
 #include <string>
@@ -94,4 +94,4 @@ enum Level {
 
 }} // ns
 
-#endif // LIB_TOOLS_HASH_LOG_H
+#endif // LIB_TOOLS_LOG_H

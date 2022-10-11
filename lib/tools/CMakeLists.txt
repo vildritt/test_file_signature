@@ -30,8 +30,10 @@ add_library(tools
 )
 
 
-target_link_libraries(tools
-    PUBLIC pthread)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(tools
+        PUBLIC pthread)
+endif()
 
 target_include_directories(tools
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"

@@ -39,7 +39,13 @@ add_executable(segmented_signature_cli
 
 
 target_link_libraries(segmented_signature_cli
-    PRIVATE pthread tools)
+    PRIVATE tools)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_libraries(segmented_signature_cli
+        PRIVATE pthread)
+endif()
+
 
 target_include_directories(segmented_signature_cli
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"

@@ -40,9 +40,9 @@ uint64_t tools::Timer::elapsed_ns(bool restart)
         return 0;
     }
 
-    auto res = elapsedNsFromTs(m_start_tp) - m_elapsedInPausesAccum_ns;
+    auto res = Timer::elapsedNsFromTs(m_start_tp) - m_elapsedInPausesAccum_ns;
     if (m_paused) {
-        res -= elapsedNsFromTs(m_pause_tp);
+        res -= Timer::elapsedNsFromTs(m_pause_tp);
     }
 
     if (restart) {
@@ -86,12 +86,12 @@ void tools::Timer::cont()
     if (!m_paused || !m_started) {
         return;
     }
-    m_elapsedInPausesAccum_ns += elapsedNsFromTs(m_pause_tp);
+    m_elapsedInPausesAccum_ns += Timer::elapsedNsFromTs(m_pause_tp);
     m_paused = false;
 }
 
 
-void tools::Timer::log(int statCount, bool restart)
+void tools::Timer::log(size_t statCount, bool restart)
 {
     if (m_started) {
         const auto us = elapsed_us(restart);
@@ -117,7 +117,7 @@ void tools::Timer::log(int statCount, bool restart)
 }
 
 
-uint64_t tools::Timer::elapsedNsFromTs(const Clock::time_point& tp) const
+uint64_t tools::Timer::elapsedNsFromTs(const Clock::time_point &tp)
 {
     return std::chrono::nanoseconds(Clock::now() - tp).count();
 }

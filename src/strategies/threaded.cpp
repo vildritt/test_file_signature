@@ -4,6 +4,7 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <array>
 #include <condition_variable>
 
 #include "consts.hpp"
@@ -48,7 +49,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
     std::condition_variable cvResNext;
 
     // TODO 2: may be use priority queue? but it's log(n). Need tests vs hash map with real data
-    std::unordered_map<int, std::vector<ss::Digest>> results;
+    std::unordered_map<size_t, std::vector<ss::Digest>> results;
     size_t maxResultStoreCount = threadPool.size();
 
     {
@@ -93,7 +94,7 @@ void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, std::ostrea
 
                 // print all ready sequenced results
                 while(!results.empty()) {
-                    const auto it = results.find(nextBlockResultToWrite);
+                    const auto it = results.find(nextBlockResultToWrite.load());
                     if (it != results.end()) {
                         auto digests = std::move(it->second);
                         const size_t startBlockId = it->first;

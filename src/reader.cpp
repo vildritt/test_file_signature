@@ -24,7 +24,7 @@ std::string_view ss::BlockReader::readBlock(size_t blockIndex)
     const bool islast = (blockIndex == m_slices.lastBlockIndex);
 
     const ss::SizeBytes pos = static_cast<SizeBytes>(m_slices.blockSize) * blockIndex;
-    m_ifs.seekg(pos, std::ios_base::seekdir::_S_beg);
+    m_ifs.seekg(pos, std::ios_base::beg);
 
     if (islast && m_slices.needToFillUplastBlock) {
         if (m_slices.lastBlockRealSize > 0) {

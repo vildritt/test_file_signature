@@ -34,7 +34,7 @@ set(HEADERS
 add_executable(segmented_signature_cli
     ${SOURCES}
     ${HEADERS}
-    #usage.txt
+    usage.txt
 )
 
 

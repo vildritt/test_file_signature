@@ -30,7 +30,7 @@ struct Options {
 Options parseCliParameters(int argc, const char* argv[]);
 
 ss::MediaType guessFileMediaType(const std::string& path);
-ss::SizeBytes suggestReadBufferSizeByMediaType(ss::MediaType mt);
+ss::SizeBytes suggestReadBufferSizeByMediaType(ss::MediaType mt, ss::SizeBytes blockSize);
 
 void dropOSCaches();
 

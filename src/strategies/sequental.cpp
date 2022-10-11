@@ -16,6 +16,7 @@ void ss::SequentalHashStrategy::doHash(const std::string &inFilePath, std::ostre
     }
 }
 
+
 std::string ss::SequentalHashStrategy::getConfString() const
 {
     return "S";

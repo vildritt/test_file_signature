@@ -4,20 +4,19 @@
 
 # POOL
 
+- [0] better use adaptive strategy that is est. io ops, hashing ops and balance: thread count / thread seq read
 - [0] check 128G (50GB whatever) file with block size 512 not out of memory
 
-- [1] guess type by est speed, in linux try to detect storage
-    cat /sys/block/sda/queue/rotational
-    https://stackoverflow.com/questions/2337139/where-is-a-file-mounted
-    win/lin diff procs
-
+- [1] guess type by est speed? in linux try to detect storages
 - [3] impl big-endian MD5 impl (seem impl but not checked)
 
 # Notes
 
 - реализацию MD5 скопировал с публичного проекта и "причесал", не стал брать из boost потому что с какой-то версии md5 стала вычисляться иначе (не по spec)
 - тестировал только на linux, сборку проверял на linux gcc9, windows msvc 10.0
+- в выборе стретегии погряз:
+    - по сути заложена возможность менять стратегии (размеры буферов, кол-во потоков), но хорошие занчения для разных типов media не найдены.
+    - может быть лучше за место угадввания (которое не реализовано, щзаглушка чтоит) типа media делать адаптивную стратегию - замерять время IO, время хеширования, изменять кол-во потоков и кол-во блоков в потоке на лету
 - сборка на windows gcc 8.1 не пошла, возм
 - на доступ к ПК с Windows + MSVC ушло много времени к сожалению
-
-
+- работоспособность на Windows не успел проверить (в временной слот использовать win машины не влез), подозреваю как минимум проблему с не латинскими буквами в именах файлов, потому что используют std::string, вероятно оно будет UTF-8 воприниматься, а не локальную однобайтовую кодировку

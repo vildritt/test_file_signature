@@ -32,6 +32,7 @@ private:
     std::ifstream m_ifs;
     std::vector<char> m_blockBuffer;
     std::vector<char> m_readBuffer;
+    ss::SizeBytes m_lastPos = 0;
 };
 
 

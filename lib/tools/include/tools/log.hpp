@@ -56,7 +56,6 @@ do { \
 } while(0)
 
 
-// TODO 1: possibly not compatible with MSVC, check!
 #define TS_LOGF(level, fmt, ...) \
     do { \
         auto& l = localLogger(); \

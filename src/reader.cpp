@@ -32,17 +32,20 @@ std::string_view ss::BlockReader::readBlock(size_t blockIndex)
     const bool islast = (blockIndex == m_slices.lastBlockIndex);
 
     const ss::SizeBytes pos = static_cast<SizeBytes>(m_slices.blockSize) * blockIndex;
-    if (pos != m_ifs.tellg()) {
+    if (pos != m_lastPos) {
         m_ifs.seekg(pos, std::ios_base::beg);
+        m_lastPos = pos;
     }
 
     if (islast && m_slices.needToFillUplastBlock) {
         if (m_slices.lastBlockRealSize > 0) {
             m_ifs.read(buffer, m_slices.lastBlockRealSize);
+            m_lastPos += m_slices.lastBlockRealSize;
         }
         std::fill(m_blockBuffer.begin() + m_slices.lastBlockRealSize, m_blockBuffer.end(), 0);
     } else {
         m_ifs.read(buffer, m_slices.blockSize);
+        m_lastPos += m_slices.blockSize;
     }
     return std::string_view(buffer, m_slices.blockSize);
 }

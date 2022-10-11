@@ -41,7 +41,8 @@ std::ostream &ss::operator<<(std::ostream &s, const Digest &d)
         s << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
     }
 
-    // NOTE: avoid flushinf on every short digest, also use same delimiter for all platforms (binary compat text files) TODO 1: rethink
+    // NOTE: avoid flushinf on every short digest, also use same delimiter for all platforms (binary compat text files)
+    // TODO 1: rethink
     s << "\n"; // std::endl;
 
     return s;

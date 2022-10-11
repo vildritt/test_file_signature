@@ -132,7 +132,11 @@ misc::Options misc::parseCliParameters(int argc, const char *argv[])
 
 ss::MediaType misc::guessFileMediaType(const std::string &path)
 {
-    //TODO 0: implement
+    //TODO 0: implement!
+    //    cat /sys/block/sda/queue/rotational
+    //    https://stackoverflow.com/questions/2337139/where-is-a-file-mounted
+    //    win/lin diff procs
+
     return ss::MediaType::Unknown;
 }
 
@@ -140,7 +144,7 @@ ss::MediaType misc::guessFileMediaType(const std::string &path)
 void misc::dropOSCaches()
 {
 #ifdef _WIN32
-    //TODO 0: implement
+    //TODO 1: implement
     TS_WLOG("dropOSCaches not implemented");
 #else
     std::system("sync");
@@ -153,18 +157,21 @@ void misc::dropOSCaches()
 }
 
 
-ss::SizeBytes misc::suggestReadBufferSizeByMediaType(ss::MediaType mt)
+ss::SizeBytes misc::suggestReadBufferSizeByMediaType(ss::MediaType mt, ss::SizeBytes blockSize)
 {
     //TODO 0: tune values
     switch (mt) {
     case ss::MediaType::Memory:
-        return 8 * ss::kMegaBytes;
+        return std::max(8 * ss::kMegaBytes, blockSize);
     case ss::MediaType::SSD:
+        return std::max(2 * ss::kMegaBytes, blockSize);
     case ss::MediaType::HDD:
-        return 2 * ss::kMegaBytes;
+         // tests (1 laptop) shows for small blocks after 1 MB no perf grow
+        return std::max(1 * ss::kMegaBytes, blockSize);
     case ss::MediaType::Unknown:
         return 1 * ss::kMegaBytes;
     case ss::MediaType::NetworkDrive:
+        // no tests, assume ill connected
         return 512 * ss::kKiloBytes;
     }
     return 1 * ss::kMegaBytes;

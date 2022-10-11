@@ -12,6 +12,8 @@ TEST_PERF="Y"
 if [ -n "$PROJECT_D" ]; then
 	# if runs from cmake
 	TEMP_D="$PROJECT_D/../.build/test"
+	TEST_CORR="Y"
+	TEST_PERF="N"
 else
 	# manual runs
 	PROJECT_D="."
@@ -19,13 +21,13 @@ else
 	HASHER="$THIS_D/../../build-test_signature-Desktop_Qt_5_14_2_GCC_64bit-Debug/src/segmented_signature_cli"
 
 	# tmpfs
-	TEMP_D_TMP="/run/user/1000"
+	TEMP_D_MEM="/run/user/1000"
 	# SSD
 	TEMP_D_SSD="$HOME"
 	# HDD
 	TEMP_D_HDD="/media/data/public/delme"
 
-	TEMP_D="$TEMP_D_SSD/.build/test"
+	TEMP_D="$TEMP_D_MEM/.build/test"
 fi
 
 mkdir -p "$TEMP_D"
@@ -191,26 +193,31 @@ perf_test_file_bs() {
 
 	local OPTS="-pddd"
 
-	test_file "perf" "$TEST_FILE"   $BS "" S  "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T2 "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T4 "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T2512   "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T21K    "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T25K    "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T210K   "-" $OPTS
-	#test_file "perf" "$TEST_FILE"   $BS "" T2100K  "-" $OPTS
-	test_file "perf" "$TEST_FILE"   $BS "" T  "-" $OPTS
+	## optimize buffer size
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "$OPTS"
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "1K $OPTS"
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "512K $OPTS"
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "1M $OPTS"
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "2M $OPTS"
+	#test_file "perf" "$TEST_FILE"   $BS "" S  "-" "4M $OPTS"
+
+	## optimize num of threads
+	#test_file "perf" "$TEST_FILE"   $BS "" T2  "-" "$OPTS
+	#test_file "perf" "$TEST_FILE"   $BS "" T4  "-" '$OPTS
+
+	test_file "perf" "$TEST_FILE"   $BS "" S  "-" "$OPTS"
+	test_file "perf" "$TEST_FILE"   $BS "" T  "-" "$OPTS"
 }
 
 perf_test_file() {
 	local TEST_FILE="$1"
 	local OPTS="-pddd"
 
-	#perf_test_file_bs "$TEST_FILE" 512
-	#perf_test_file_bs "$TEST_FILE" 512k
-	#perf_test_file_bs "$TEST_FILE" 1M
+	perf_test_file_bs "$TEST_FILE" 512
+	perf_test_file_bs "$TEST_FILE" 100k
+	perf_test_file_bs "$TEST_FILE" 1M
 	perf_test_file_bs "$TEST_FILE" 5M
-	#perf_test_file_bs "$TEST_FILE" 10M
+	perf_test_file_bs "$TEST_FILE" 10M
 }
 
 if [ "$TEST_PERF" == "Y" ]; then
@@ -220,8 +227,8 @@ if [ "$TEST_PERF" == "Y" ]; then
 	#perf_test_file "$TEMP_D/r_512k"
 	#perf_test_file "$TEMP_D/r_1M"
 	#perf_test_file "$TEMP_D/r_10M"
-	perf_test_file "$TEMP_D/r_100M"
-	#perf_test_file "$TEMP_D/r_500M"
+	#perf_test_file "$TEMP_D/r_100M"
+	perf_test_file "$TEMP_D/r_500M"
 fi
 
 [ -e "$DEF_OUTPUT_FILE" ] && rm "$DEF_OUTPUT_FILE"

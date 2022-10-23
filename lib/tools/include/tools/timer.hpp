@@ -65,14 +65,14 @@ public:
     void log(size_t statCount = 0, bool restart = false);
 
 private:
-    std::string m_name;
-    bool m_autoLoggable = false;
+    std::string m_timerName;
+    bool m_autoLoggableOnDestory = false;
 
-    Clock::time_point m_start_tp;
-    Clock::time_point m_pause_tp;
-    bool m_started = false;
-    bool m_paused = false;
-    uint64_t m_elapsedInPausesAccum_ns = 0;
+    Clock::time_point m_startTimePoint;
+    Clock::time_point m_pausedAtTimePoint;
+    bool m_isStarted = false;
+    bool m_isPaused = false;
+    uint64_t m_elapsedInPausesAccumulator_ns = 0;
 
     static uint64_t elapsedNsFromTs(const Clock::time_point &tp);
 };

@@ -7,8 +7,8 @@ TS_LOGGER("timer");
 
 
 tools::Timer::Timer(const std::string &name, bool autoLoggable)
-    : m_name(name)
-    , m_autoLoggable(autoLoggable)
+    : m_timerName(name)
+    , m_autoLoggableOnDestory(autoLoggable)
 {
     start();
 }
@@ -17,7 +17,7 @@ tools::Timer::Timer(const std::string &name, bool autoLoggable)
 tools::Timer::~Timer() noexcept
 {
     try {
-        if (m_autoLoggable) {
+        if (m_autoLoggableOnDestory) {
             log();
         }
     }  catch (...) {
@@ -27,22 +27,22 @@ tools::Timer::~Timer() noexcept
 
 void tools::Timer::start()
 {
-    m_start_tp = Clock::now();
-    m_started = true;
-    m_paused = false;
-    m_elapsedInPausesAccum_ns = 0;
+    m_startTimePoint = Clock::now();
+    m_isStarted = true;
+    m_isPaused = false;
+    m_elapsedInPausesAccumulator_ns = 0;
 }
 
 
 uint64_t tools::Timer::elapsed_ns(bool restart)
 {
-    if (!m_started) {
+    if (!m_isStarted) {
         return 0;
     }
 
-    auto res = Timer::elapsedNsFromTs(m_start_tp) - m_elapsedInPausesAccum_ns;
-    if (m_paused) {
-        res -= Timer::elapsedNsFromTs(m_pause_tp);
+    auto res = Timer::elapsedNsFromTs(m_startTimePoint) - m_elapsedInPausesAccumulator_ns;
+    if (m_isPaused) {
+        res -= Timer::elapsedNsFromTs(m_pausedAtTimePoint);
     }
 
     if (restart) {
@@ -73,46 +73,46 @@ double tools::Timer::elapsed_s(bool restart)
 
 void tools::Timer::pause()
 {
-    if (m_paused || !m_started) {
+    if (m_isPaused || !m_isStarted) {
         return;
     }
-    m_pause_tp = Clock::now();
-    m_paused = true;
+    m_pausedAtTimePoint = Clock::now();
+    m_isPaused = true;
 }
 
 
 void tools::Timer::resume()
 {
-    if (!m_paused || !m_started) {
+    if (!m_isPaused || !m_isStarted) {
         return;
     }
-    m_elapsedInPausesAccum_ns += Timer::elapsedNsFromTs(m_pause_tp);
-    m_paused = false;
+    m_elapsedInPausesAccumulator_ns += Timer::elapsedNsFromTs(m_pausedAtTimePoint);
+    m_isPaused = false;
 }
 
 
 void tools::Timer::log(size_t statCount, bool restart)
 {
-    if (m_started) {
+    if (m_isStarted) {
         const auto us = elapsed_us(restart);
         const auto ms = us / 1000.0;
         const auto s = ms / 1000.0;
         if (statCount > 0) {
             TS_NLOGF("[%s] elapsed: T[tot.ms]=%10.3f; STAT: %7d times; T[us]=%13.3f; T[ms]=%10.3f; T[s]=%10.3f)",
-                     m_name.c_str(),
+                     m_timerName.c_str(),
                      ms,
                      statCount,
                      us / statCount,
                      ms / statCount,
                      s / statCount);
         } else {
-            TS_VLOGF("[%s] elapsed: T[tot.ms]=%10.3f", m_name.c_str(), ms);
+            TS_VLOGF("[%s] elapsed: T[tot.ms]=%10.3f", m_timerName.c_str(), ms);
         }
     } else {
-        TS_WLOGF("[%s] not started yet", m_name.c_str());
+        TS_WLOGF("[%s] not started yet", m_timerName.c_str());
     }
-    if (m_elapsedInPausesAccum_ns > 0) {
-        TS_D2LOGF("[%s] elapsed in pause: %10.3f ms", m_name.c_str(), m_elapsedInPausesAccum_ns * 1.0E-6);
+    if (m_elapsedInPausesAccumulator_ns > 0) {
+        TS_D2LOGF("[%s] elapsed in pause: %10.3f ms", m_timerName.c_str(), m_elapsedInPausesAccumulator_ns * 1.0E-6);
     }
 }
 

@@ -1,17 +1,19 @@
-#include "abstract.hpp"
+#include "abstract_strategy.hpp"
 
 #include <cassert>
 #include <thread>
 
 #include "misc.hpp"
-#include "strategies/sequental.hpp"
-#include "strategies/threaded.hpp"
+
+#include "strategies/sequental_strategy.hpp"
+#include "strategies/threaded_strategy.hpp"
 
 
-void ss::AbstractHashStrategy::hash(const std::string &inFilePath, const DigestWriterPtr &writer, const FileSlicesScheme &slices, const tools::hash::HasherFactoryPtr &hasherFactory)
+void ss::AbstractHashStrategy::hash(const Configuration& config)
 {
-    assert(hasherFactory.get() && "give me a haser factory");
-    doHash(inFilePath, writer, slices, hasherFactory);
+    assert(config.hasherFactory.get() && "give me a haser factory");
+    assert(config.readerfactory.get() && "give me a reader factory");
+    doHash(config);
 }
 
 

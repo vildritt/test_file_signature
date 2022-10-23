@@ -5,6 +5,8 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <memory>
+#include <functional>
 
 #include "slices_scheme.hpp"
 
@@ -54,6 +56,31 @@ private:
     std::vector<char> m_blockBuffer;
 
     ss::SizeBytes m_currentFilePosition = 0;
+};
+
+
+using FileBlockReaderPtr = std::shared_ptr<FileBlockReader>;
+
+
+class FileBlockReaderFactory {
+public:
+    virtual ~FileBlockReaderFactory() {}
+    FileBlockReaderPtr create();
+private:
+    virtual FileBlockReaderPtr doCreate() = 0;
+};
+
+
+using FileBlockReaderFactoryPtr = std::shared_ptr<FileBlockReaderFactory>;
+
+
+class FileBlockReaderFactoryDelegate : public FileBlockReaderFactory {
+public:
+    using Delegate = std::function<FileBlockReaderPtr(void)>;
+    FileBlockReaderFactoryDelegate(Delegate delegate);
+private:
+    FileBlockReaderPtr doCreate() override;
+    Delegate m_delegate;
 };
 
 

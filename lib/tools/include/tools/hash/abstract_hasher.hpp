@@ -45,6 +45,8 @@ using HasherPtr = std::shared_ptr<AbstractHasher>;
 
 class AbstractHasherFactory {
 public:
+    virtual ~AbstractHasherFactory() {}
+
     HasherPtr create();
     size_t digestSize();
 private:

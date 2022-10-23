@@ -13,7 +13,7 @@ set(SOURCES
     formatter.cpp
     timer.cpp
     hash/digest.cpp
-    hash/hasher.cpp
+    hash/abstract_hasher.cpp
     hash/md5_hasher.cpp
 )
 
@@ -24,7 +24,7 @@ set(HEADERS
     include/tools/formatter.hpp
     include/tools/timer.hpp
     include/tools/hash/digest.hpp
-    include/tools/hash/hasher.hpp
+    include/tools/hash/abstract_hasher.hpp
     include/tools/hash/md5_hasher.hpp
 )
 

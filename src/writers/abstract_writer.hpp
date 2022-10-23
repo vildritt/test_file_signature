@@ -1,5 +1,5 @@
-#ifndef SS_WRITERS_WRITER_H
-#define SS_WRITERS_WRITER_H
+#ifndef SS_WRITERS_ABSTRACT_WRITER_H
+#define SS_WRITERS_ABSTRACT_WRITER_H
 #pragma once
 
 #include <memory>
@@ -12,6 +12,8 @@ namespace ss {
 
 class AstractDigestWriter {
 public:
+    virtual ~AstractDigestWriter() {}
+
     /// push digest to output
     void write(const tools::hash::Digest& digest);
     /// do any flushing for buffered outputs
@@ -28,4 +30,4 @@ using DigestWriterPtr = std::shared_ptr<AstractDigestWriter>;
 } // ns ss
 
 
-#endif // SS_WRITERS_WRITER_H
+#endif // SS_WRITERS_ABSTRACT_WRITER_H

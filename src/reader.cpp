@@ -61,3 +61,21 @@ const ss::FileSlicesScheme &ss::FileBlockReader::fileSlicesScheme() const
 {
     return m_fileSlicesScheme;
 }
+
+
+ss::FileBlockReaderPtr ss::FileBlockReaderFactory::create()
+{
+    return doCreate();
+}
+
+
+ss::FileBlockReaderFactoryDelegate::FileBlockReaderFactoryDelegate(Delegate delegate)
+    : m_delegate(delegate)
+{
+}
+
+
+ss::FileBlockReaderPtr ss::FileBlockReaderFactoryDelegate::doCreate()
+{
+    return m_delegate();
+}

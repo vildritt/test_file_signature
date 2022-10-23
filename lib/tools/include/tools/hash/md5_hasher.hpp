@@ -2,7 +2,7 @@
 #define LIB_TOOLS_HASH_MD5_HASHER_H
 #pragma once
 
-#include <tools/hash/hasher.hpp>
+#include <tools/hash/abstract_hasher.hpp>
 
 #include <memory>
 

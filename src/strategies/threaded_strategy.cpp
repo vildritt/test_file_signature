@@ -1,11 +1,11 @@
-#include "threaded.hpp"
+#include "threaded_strategy.hpp"
 
 #include <thread>
 
-#include "strategies/threaded/shared_context.hpp"
-#include "consts.hpp"
-
 #include <tools/formatter.hpp>
+
+#include "consts.hpp"
+#include "strategies/detail/threaded/processor.hpp"
 
 
 ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t poolSizeHint, SizeBytes singleThreadSequentalRangeSize)
@@ -18,19 +18,19 @@ ss::ThreadedHashStrategy::ThreadedHashStrategy(size_t poolSizeHint, SizeBytes si
 }
 
 
-void ss::ThreadedHashStrategy::doHash(const std::string &inFilePath, const ss::DigestWriterPtr& writer, const FileSlicesScheme &slices, const tools::hash::HasherFactoryPtr &hasherFactory)
+void ss::ThreadedHashStrategy::doHash(const Configuration &config)
 {
     SizeBytes effSingleThreadSequentalRangeSize = m_singleThreadSequentalRangeSize > 0
             ? m_singleThreadSequentalRangeSize
-            : slices.suggestedReadBufferSizeBytes;
+            : config.fileSlicesScheme.suggestedReadBufferSizeBytes;
 
     if (effSingleThreadSequentalRangeSize == 0) {
         effSingleThreadSequentalRangeSize = ss::kDefaultSingleThreadSequentalRangeSize;
     }
 
-    ss::threaded::SharedContext ctx(inFilePath, slices, m_poolSizeHint, effSingleThreadSequentalRangeSize, hasherFactory);
+    ss::detail::threaded::ThreadedHashProcessor ctx(config, m_poolSizeHint, effSingleThreadSequentalRangeSize);
 
-    ctx.run(writer);
+    ctx.run(config.writer);
 }
 
 

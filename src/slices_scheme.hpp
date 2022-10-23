@@ -3,7 +3,9 @@
 #pragma once
 
 #include <cstddef>
+
 #include "types.hpp"
+#include "consts.hpp"
 
 namespace ss {
 
@@ -11,14 +13,19 @@ namespace ss {
  * @brief info about blocks sizes, buffers etc for segmented hashing
  */
 struct FileSlicesScheme {
+    FileSlicesScheme(const FileSlicesScheme&) = default;
+    FileSlicesScheme(FileSlicesScheme&&) = default;
+    FileSlicesScheme& operator=(const FileSlicesScheme&) = default;
+    FileSlicesScheme& operator=(FileSlicesScheme&&) = default;
+
     /**
      * @param fileSizeBytes  - file size in bytes
      * @param blockSizeBytes - block size in bytes to eval single hash on it
      */
-    FileSlicesScheme(SizeBytes fileSizeBytes, SizeBytes blockSizeBytes, SizeBytes suggestedReadBufferSizeBytes = 0);
+    FileSlicesScheme(SizeBytes fileSizeBytes = 0, SizeBytes blockSizeBytes = ss::kDefaultBlockSize, SizeBytes suggestedReadBufferSizeBytes = 0);
 
-    const SizeBytes fileSizeBytes = 0;
-    const SizeBytes blockSizeBytes = 0;
+    SizeBytes fileSizeBytes = 0;
+    SizeBytes blockSizeBytes = 0;
 
     /// block count in file (including last may be not full filled block)
     size_t blockCount = 0;

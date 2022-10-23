@@ -6,7 +6,7 @@
 TS_LOGGER("hash.threaded.job")
 
 
-ss::threaded::ReaderAndHasherJob::ReaderAndHasherJob(size_t startBlock, size_t endBlock, SharedContext *ctx)
+ss::detail::threaded::ReaderAndHasherJob::ReaderAndHasherJob(size_t startBlock, size_t endBlock, ThreadedHashProcessor *ctx)
     : m_startBlock(startBlock)
     , m_endBlock(endBlock)
     , m_ctx(ctx)
@@ -14,10 +14,10 @@ ss::threaded::ReaderAndHasherJob::ReaderAndHasherJob(size_t startBlock, size_t e
 }
 
 
-void ss::threaded::ReaderAndHasherJob::doRun()
+void ss::detail::threaded::ReaderAndHasherJob::doRun()
 {
     try {
-        SharedContext::SingleBlockReaderAndHasherLocker readerHolder(m_ctx);
+        ThreadedHashProcessor::BlockReaderAndHasherLocker readerHolder(m_ctx);
         execute(readerHolder.blockReaderHasher);
     } catch (const std::exception& e) {
         TS_ELOGF("hash job failed [%d]: %s", m_startBlock, e.what());
@@ -29,7 +29,7 @@ void ss::threaded::ReaderAndHasherJob::doRun()
 }
 
 
-void ss::threaded::ReaderAndHasherJob::execute(const SingleBlockReaderAndHasherPtr &blockReaderHasher)
+void ss::detail::threaded::ReaderAndHasherJob::execute(const BlockReaderAndHasherPtr &blockReaderHasher)
 {
     std::vector<tools::hash::Digest> seqDigests;
     seqDigests.reserve(m_endBlock - m_startBlock);

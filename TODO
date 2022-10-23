@@ -4,9 +4,6 @@
 
 # POOL
 
-- for reader also use factory?
-- strategy 4 params - use struct for it!
-
 - [0] better use adaptive strategy that is est. io ops, hashing ops and balance: thread count / thread seq read
 + [0] check 128G (50GB whatever) file with block size 512 not out of memory. Checked on 12 GB only
 

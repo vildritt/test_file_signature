@@ -5,7 +5,7 @@
 #include <ostream>
 #include <string>
 
-#include "writers/writer.hpp"
+#include "writers/abstract_writer.hpp"
 
 
 namespace ss {

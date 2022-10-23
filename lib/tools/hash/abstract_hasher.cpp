@@ -1,4 +1,4 @@
-#include <tools/hash/hasher.hpp>
+#include <tools/hash/abstract_hasher.hpp>
 
 
 void tools::hash::AbstractHasher::initialize()

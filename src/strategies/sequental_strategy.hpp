@@ -1,8 +1,8 @@
-#ifndef SS_STRATEGIES_SEQUENTAL_H
-#define SS_STRATEGIES_SEQUENTAL_H
+#ifndef SS_STRATEGIES_SEQUENTAL_STRATEGY_H
+#define SS_STRATEGIES_SEQUENTAL_STRATEGY_H
 #pragma once
 
-#include "strategies/abstract.hpp"
+#include "strategies/abstract_strategy.hpp"
 
 namespace ss {
 
@@ -15,10 +15,10 @@ namespace ss {
 class SequentalHashStrategy : public AbstractHashStrategy
 {
 private:
-    void doHash(const std::string& inFilePath, const ss::DigestWriterPtr& writer, const ss::FileSlicesScheme& slices, const tools::hash::HasherFactoryPtr &hasherFactory) override;
+    void doHash(const Configuration& config) override;
     std::string getConfigurationStringRepresentation() const override;
 };
 
 } // ns ss
 
-#endif // SS_STRATEGIES_SEQUENTAL_H
+#endif // SS_STRATEGIES_SEQUENTAL_STRATEGY_H

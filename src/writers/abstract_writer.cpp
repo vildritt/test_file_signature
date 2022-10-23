@@ -1,4 +1,4 @@
-#include "writer.hpp"
+#include "abstract_writer.hpp"
 
 
 void ss::AstractDigestWriter::write(const tools::hash::Digest &digest)
